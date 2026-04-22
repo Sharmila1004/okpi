@@ -1,44 +1,107 @@
-version: "3.8"
+version: "3.9"
 
 services:
+  discovery-server:
+    build:
+      context: .
+      dockerfile: okpi-discovery-server/Dockerfile
+    container_name: okpi-discovery-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
 
-  mysql1:
+  mysql-auth:
     image: mysql:8.0
-    container_name: mysql-okpi-1
-    restart: always
+    container_name: okpi-mysql-auth
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: okpidb1
+      MYSQL_DATABASE: okpi_auth
     ports:
       - "3307:3306"
     volumes:
-      - mysql1-data:/var/lib/mysql
+      - mysql-auth-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  mysql2:
+  mysql-objective:
     image: mysql:8.0
-    container_name: mysql-okpi-2
-    restart: always
+    container_name: okpi-mysql-objective
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: okpidb2
+      MYSQL_DATABASE: okpi_objective
     ports:
       - "3308:3306"
     volumes:
-      - mysql2-data:/var/lib/mysql
+      - mysql-objective-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  mysql3:
-    image: mysql:8.0
-    container_name: mysql-okpi-3
-    restart: always
+  auth-service:
+    build:
+      context: .
+      dockerfile: okpi-auth-service/Dockerfile
+    container_name: okpi-auth-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_started
+      mysql-auth:
+        condition: service_healthy
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: okpidb3
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/okpi_auth
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLWRldi1zZWNyZXQta2V5LWF0LWxlYXN0LTMyLWJ5dGVz}
     ports:
-      - "3309:3306"
-    volumes:
-      - mysql3-data:/var/lib/mysql
+      - "8081:8081"
+
+  objective-service:
+    build:
+      context: .
+      dockerfile: okpi-objective-service/Dockerfile
+    container_name: okpi-objective-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_started
+      mysql-objective:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-objective:3306/okpi_objective
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    ports:
+      - "8083:8083"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: okpi-api-gateway/Dockerfile
+    container_name: okpi-api-gateway
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      objective-service:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLWRldi1zZWNyZXQta2V5LWF0LWxlYXN0LTMyLWJ5dGVz}
+    ports:
+      - "8080:8080"
 
 volumes:
-  mysql1-data:
-  mysql2-data:
-  mysql3-data:
+  mysql-auth-data:
+  mysql-objective-data:

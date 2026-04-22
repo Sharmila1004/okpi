@@ -1,0 +1,39 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: okpi-api-gateway
+
+  cloud:
+    gateway:
+
+      discovery:
+        locator:
+          enabled: false
+          lower-case-service-id: true
+
+      routes:
+
+        - id: auth-service
+          uri: lb://OKPI-AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: objective-service
+          uri: lb://OKPI-OBJECTIVE-SERVICE
+          predicates:
+            - Path=/api/v1/objectives/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+    register-with-eureka: ${EUREKA_CLIENT_REGISTER_WITH_EUREKA:true}
+    fetch-registry: ${EUREKA_CLIENT_FETCH_REGISTRY:true}
+
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:dGhpcy1pcy1hLWRldi1zZWNyZXQta2V5LWF0LWxlYXN0LTMyLWJ5dGVz}
