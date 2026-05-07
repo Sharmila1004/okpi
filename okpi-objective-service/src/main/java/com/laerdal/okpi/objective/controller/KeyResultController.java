@@ -27,24 +27,24 @@ public class KeyResultController {
     }
 
     @PostMapping
-    public KeyResultResponse create(@PathVariable Long objectiveId,
+    public KeyResultResponse create(@PathVariable("objectiveId") Long objectiveId,
                                     @Valid @RequestBody CreateKeyResultRequest request) {
         return keyResultService.create(objectiveId, request);
     }
 
     @GetMapping
-    public List<KeyResultResponse> getAll(@PathVariable Long objectiveId) {
+    public List<KeyResultResponse> getAll(@PathVariable("objectiveId") Long objectiveId) {
         return keyResultService.getByObjectiveId(objectiveId);
     }
 
     @PutMapping("/{keyResultId}")
-    public KeyResultResponse update(@PathVariable Long keyResultId,
+    public KeyResultResponse update(@PathVariable("keyResultId") Long keyResultId,
                                     @Valid @RequestBody UpdateKeyResultRequest request) {
         return keyResultService.update(keyResultId, request);
     }
 
     @DeleteMapping("/{keyResultId}")
-    public void delete(@PathVariable Long keyResultId) {
+    public void delete(@PathVariable("keyResultId") Long keyResultId) {
         keyResultService.delete(keyResultId);
     }
 }

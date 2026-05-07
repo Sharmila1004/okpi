@@ -26,9 +26,9 @@ public class UserController {
 
     @GetMapping
     public PagedResponse<UserResponse> getUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String role
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "role", required = false) String role
     ) {
         return userService.getUsers(page, size, role);
     }

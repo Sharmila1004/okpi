@@ -25,6 +25,11 @@ spring:
           predicates:
             - Path=/api/v1/objectives/**
 
+        - id: kpi-service
+          uri: lb://OKPI-KPI-SERVICE
+          predicates:
+            - Path=/api/v1/kpis/**
+
 eureka:
   client:
     service-url:

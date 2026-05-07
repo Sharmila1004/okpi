@@ -4,13 +4,13 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDate;
 
 @Data
 public class CreateKpiEntryRequest {
     @NotNull
     private BigDecimal value;
     @NotNull
-    private Instant recordedAt;
+    private LocalDate recordedAt;
     private String note;
 }

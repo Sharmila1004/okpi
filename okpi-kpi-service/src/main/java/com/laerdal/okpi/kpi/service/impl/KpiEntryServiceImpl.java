@@ -12,6 +12,7 @@ import com.laerdal.okpi.kpi.service.KpiEntryService;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -37,7 +38,7 @@ public class KpiEntryServiceImpl implements KpiEntryService {
         KpiEntry entry = KpiEntry.builder()
                 .kpiDefinition(definition)
                 .value(request.getValue())
-                .recordedAt(request.getRecordedAt())
+                .recordedAt(request.getRecordedAt().atStartOfDay(ZoneOffset.UTC).toInstant())
                 .note(request.getNote())
                 .createdAt(Instant.now())
                 .build();

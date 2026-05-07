@@ -44,34 +44,34 @@ public class ObjectiveController {
 
     @GetMapping
     @Operation(summary = "List objectives with pagination and filtering")
-    public PagedResponse<ObjectiveResponse> list(@RequestParam(defaultValue = "0") int page,
-                                                 @RequestParam(defaultValue = "10") int size,
-                                                 @RequestParam(required = false) String status,
-                                                 @RequestParam(required = false) Long ownerId,
-                                                 @RequestParam(required = false) String search) {
+    public PagedResponse<ObjectiveResponse> list(@RequestParam(name = "page", defaultValue = "0") int page,
+                                                 @RequestParam(name = "size", defaultValue = "10") int size,
+                                                 @RequestParam(name = "status", required = false) String status,
+                                                 @RequestParam(name = "ownerId", required = false) Long ownerId,
+                                                 @RequestParam(name = "search", required = false) String search) {
         return objectiveService.list(page, size, status, ownerId, search);
     }
 
     @GetMapping("/{objectiveId}")
     @Operation(summary = "Get objective details with key results")
-    public ObjectiveDetailResponse getById(@PathVariable Long objectiveId) {
+    public ObjectiveDetailResponse getById(@PathVariable("objectiveId") Long objectiveId) {
         return objectiveService.getById(objectiveId);
     }
 
     @PutMapping("/{objectiveId}")
-    public ObjectiveResponse update(@PathVariable Long objectiveId,
+    public ObjectiveResponse update(@PathVariable("objectiveId") Long objectiveId,
                                     @Valid @RequestBody UpdateObjectiveRequest request) {
         return objectiveService.update(objectiveId, request);
     }
 
     @DeleteMapping("/{objectiveId}")
-    public void delete(@PathVariable Long objectiveId) {
+    public void delete(@PathVariable("objectiveId") Long objectiveId) {
         objectiveService.delete(objectiveId);
     }
 
     @GetMapping("/dashboard")
     @Operation(summary = "Aggregated OKR dashboard summary")
-    public OkrDashboardResponse dashboard(@RequestParam(required = false) Long ownerId) {
+    public OkrDashboardResponse dashboard(@RequestParam(name = "ownerId", required = false) Long ownerId) {
         return objectiveService.dashboard(ownerId);
     }
 }

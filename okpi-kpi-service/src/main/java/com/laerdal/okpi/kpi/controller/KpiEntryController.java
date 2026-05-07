@@ -25,18 +25,18 @@ public class KpiEntryController {
     }
 
     @PostMapping
-    public KpiEntryResponse create(@PathVariable Long kpiId,
+    public KpiEntryResponse create(@PathVariable("kpiId") Long kpiId,
                                    @Valid @RequestBody CreateKpiEntryRequest request) {
         return kpiEntryService.create(kpiId, request);
     }
 
     @GetMapping
-    public List<KpiEntryResponse> getAll(@PathVariable Long kpiId) {
+    public List<KpiEntryResponse> getAll(@PathVariable("kpiId") Long kpiId) {
         return kpiEntryService.getByKpiId(kpiId);
     }
 
     @DeleteMapping("/{entryId}")
-    public void delete(@PathVariable Long entryId) {
+    public void delete(@PathVariable("entryId") Long entryId) {
         kpiEntryService.delete(entryId);
     }
 }

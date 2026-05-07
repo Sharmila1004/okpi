@@ -38,18 +38,18 @@ public class KpiController {
     }
 
     @GetMapping("/{kpiId}")
-    public KpiDetailResponse getById(@PathVariable Long kpiId) {
+    public KpiDetailResponse getById(@PathVariable("kpiId") Long kpiId) {
         return kpiService.getById(kpiId);
     }
 
     @PutMapping("/{kpiId}")
-    public KpiResponse update(@PathVariable Long kpiId,
+    public KpiResponse update(@PathVariable("kpiId") Long kpiId,
                               @RequestBody UpdateKpiRequest request) {
         return kpiService.update(kpiId, request);
     }
 
     @DeleteMapping("/{kpiId}")
-    public void delete(@PathVariable Long kpiId) {
+    public void delete(@PathVariable("kpiId") Long kpiId) {
         kpiService.delete(kpiId);
     }
 }

@@ -83,6 +83,42 @@ services:
     ports:
       - "8083:8083"
 
+  mysql-kpi:
+    image: mysql:8.0
+    container_name: okpi-mysql-kpi
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: okpi_kpi
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql-kpi-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kpi-service:
+    build:
+      context: .
+      dockerfile: okpi-kpi-service/Dockerfile
+    container_name: okpi-kpi-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_started
+      mysql-kpi:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-kpi:3306/okpi_kpi
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    ports:
+      - "8084:8084"
+
   api-gateway:
     build:
       context: .
@@ -96,6 +132,8 @@ services:
         condition: service_started
       objective-service:
         condition: service_started
+      kpi-service:
+        condition: service_started
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLWRldi1zZWNyZXQta2V5LWF0LWxlYXN0LTMyLWJ5dGVz}
@@ -105,3 +143,4 @@ services:
 volumes:
   mysql-auth-data:
   mysql-objective-data:
+  mysql-kpi-data:
