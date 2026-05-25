@@ -64,6 +64,9 @@ public class KeyResult {
     @Column(nullable = false, length = 30)
     private KeyResultStatus status;
 
+    @Column(name = "updated_by_user_id")
+    private Long updatedByUserId;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

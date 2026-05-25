@@ -1,11 +1,9 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
-COPY pom.xml pom.xml
-COPY okpi-api-gateway/pom.xml okpi-api-gateway/pom.xml
-COPY okpi-api-gateway/src okpi-api-gateway/src
+COPY . /workspace
 
-RUN mvn -pl okpi-api-gateway -am clean package -DskipTests
+RUN mvn -T1C -f pom.xml clean package -DskipTests -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

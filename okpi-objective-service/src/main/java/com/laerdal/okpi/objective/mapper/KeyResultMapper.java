@@ -18,6 +18,8 @@ public class KeyResultMapper {
                 .currentValue(keyResult.getCurrentValue())
                 .targetValue(keyResult.getTargetValue())
                 .status(keyResult.getStatus())
+                .updatedByUserId(keyResult.getUpdatedByUserId())
+                .updatedAt(keyResult.getUpdatedAt())
                 .build();
     }
 }

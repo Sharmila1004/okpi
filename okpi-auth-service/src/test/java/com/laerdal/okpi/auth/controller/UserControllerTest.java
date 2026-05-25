@@ -3,6 +3,7 @@ package com.laerdal.okpi.auth.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laerdal.okpi.auth.dto.request.ChangeRoleRequest;
 import com.laerdal.okpi.auth.dto.request.ChangeStatusRequest;
+import com.laerdal.okpi.auth.dto.request.UpdateProfileRequest;
 import com.laerdal.okpi.auth.dto.response.PagedResponse;
 import com.laerdal.okpi.auth.dto.response.UserResponse;
 import com.laerdal.okpi.auth.enums.Role;
@@ -22,6 +23,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -68,6 +70,23 @@ class UserControllerTest {
     }
 
     @Test
+    void getUsersSummaryReturnsLightweightUsers() throws Exception {
+        List<UserResponse> response = List.of(
+                userResponse(1L, "alice@example.com", Role.ADMIN, true),
+                userResponse(2L, "bob@example.com", Role.MANAGER, true)
+        );
+        when(userService.getUsersSummary(List.of(1L, 2L))).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/auth/users/summary")
+                        .param("ids", "1", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].email").value("alice@example.com"))
+                .andExpect(jsonPath("$[1].role").value("MANAGER"));
+
+        verify(userService).getUsersSummary(List.of(1L, 2L));
+    }
+
+    @Test
     void getUserReturnsSingleUser() throws Exception {
         UserResponse response = userResponse(7L, "alice@example.com", Role.ADMIN, true);
         when(userService.getUserById(7L)).thenReturn(response);
@@ -111,6 +130,42 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.active").value(false));
 
         verify(userService).changeStatus(eq(7L), eq(request));
+    }
+
+    @Test
+    void deleteUserReturnsNoContent() throws Exception {
+        mockMvc.perform(delete("/api/v1/auth/users/7"))
+                .andExpect(status().isNoContent());
+
+        verify(userService).deleteUser(7L);
+    }
+
+    @Test
+    void updateUserByAdminUpdatesProfileDetails() throws Exception {
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setFirstName("Bob");
+        request.setLastName("Builder");
+        request.setEmail("bob@example.com");
+        UserResponse response = UserResponse.builder()
+                .id(7L)
+                .email("bob@example.com")
+                .firstName("Bob")
+                .lastName("Builder")
+                .role(Role.MANAGER)
+                .active(true)
+                .createdAt(LocalDateTime.parse("2026-04-28T10:15:30"))
+                .build();
+        when(userService.updateUserByAdmin(eq(7L), eq(request))).thenReturn(response);
+
+        mockMvc.perform(put("/api/v1/auth/users/7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("bob@example.com"))
+                .andExpect(jsonPath("$.firstName").value("Bob"))
+                .andExpect(jsonPath("$.role").value("MANAGER"));
+
+        verify(userService).updateUserByAdmin(eq(7L), eq(request));
     }
 
     private static PagedResponse<UserResponse> pagedUsers() {

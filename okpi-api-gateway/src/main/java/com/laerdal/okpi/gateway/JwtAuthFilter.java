@@ -25,6 +25,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/api/v1/auth/register",
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
+            "/api/v1/auth/logout",
             "/swagger-ui",
             "/v3/api-docs"
     );
@@ -61,7 +62,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return onError(exchange);
         }
 
-        // ✅ FIX: read userId from claim, NOT subject
         String userId = claims.get("userId", String.class);
         String userRole = claims.get("role", String.class);
 

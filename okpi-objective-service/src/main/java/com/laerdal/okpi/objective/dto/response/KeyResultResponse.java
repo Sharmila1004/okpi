@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -19,4 +20,6 @@ public class KeyResultResponse {
     private BigDecimal currentValue;
     private BigDecimal targetValue;
     private KeyResultStatus status;
+    private Long updatedByUserId;
+    private Instant updatedAt;
 }

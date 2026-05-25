@@ -22,3 +22,14 @@ export function formatCurrency(value, currency = "USD") {
     maximumFractionDigits: 0
   }).format(Number(value ?? 0));
 }
+
+export function formatNumber(value) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  const numericValue = Number(value);
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2
+  }).format(Number.isNaN(numericValue) ? 0 : numericValue);
+}

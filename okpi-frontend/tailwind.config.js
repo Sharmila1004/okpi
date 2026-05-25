@@ -3,11 +3,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#18211f",
-        sand: "#f4efe6",
-        moss: "#708b75",
-        ember: "#d2683f",
-        slate: "#54606d"
+        ink: "#172033",
+        sand: "#eef3fb",
+        moss: "#0f9d78",
+        ember: "#d97706"
       }
     }
   },

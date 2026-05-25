@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class CreateObjectiveRequest {
@@ -21,4 +22,7 @@ public class CreateObjectiveRequest {
     @NotNull
     @FutureOrPresent
     private LocalDate endDate;
+
+    // optional initial assignees
+    private List<Long> assigneeIds;
 }

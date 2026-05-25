@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getObjectives } from "../../api/objectiveApi";
 import Button from "../../components/common/Button";
@@ -8,16 +8,31 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Pagination from "../../components/common/Pagination";
 import StatusBadge from "../../components/common/StatusBadge";
 import Table from "../../components/common/Table";
+import { useAuth } from "../../hooks/useAuth";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useFetch } from "../../hooks/useFetch";
+import { isManagerOrAdmin } from "../../utils/display";
 
 const PAGE_SIZE = 5;
 
 export default function ObjectivesListPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const { user } = useAuth();
+  const canCreateObjectives = isManagerOrAdmin(user?.role);
   const debouncedSearch = useDebounce(search);
-  const { data, loading, error } = useFetch(getObjectives, []);
+  const objectivesFetch = useFetch(getObjectives, []);
+  const { data, loading, error, setData } = objectivesFetch;
+
+  useEffect(() => {
+    function handler() {
+      getObjectives()
+        .then((objs) => setData(objs))
+        .catch(() => {});
+    }
+    window.addEventListener("okpi:objective-updated", handler);
+    return () => window.removeEventListener("okpi:objective-updated", handler);
+  }, [setData]);
 
   const filteredObjectives = useMemo(() => {
     const objectives = data ?? [];
@@ -45,9 +60,15 @@ export default function ObjectivesListPage() {
           <h1 className="text-3xl font-black text-ink">Objectives</h1>
           <p className="text-slate-500">Create, inspect, and refine strategic goals.</p>
         </div>
-        <Link to="/objectives/new">
-          <Button>New objective</Button>
-        </Link>
+        {canCreateObjectives ? (
+          <Link to="/objectives/new">
+            <Button>New objective</Button>
+          </Link>
+        ) : (
+          <p className="text-sm text-slate-500">
+            Managers and admins can create new objectives.
+          </p>
+        )}
       </div>
 
       <div className="card-surface p-4">

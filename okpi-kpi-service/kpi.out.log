@@ -1,0 +1,186 @@
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.laerdal:okpi-discovery-server:jar:0.0.1-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.springframework.boot:spring-boot-maven-plugin is missing. @ line 38, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.laerdal:okpi-api-gateway:jar:0.0.1-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.springframework.boot:spring-boot-maven-plugin is missing. @ line 67, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.laerdal:okpi-auth-service:jar:0.0.1-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.springframework.boot:spring-boot-maven-plugin is missing. @ line 113, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.laerdal:okpi-objective-service:jar:0.0.1-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.apache.maven.plugins:maven-compiler-plugin is missing. @ line 80, column 21
+[WARNING] 'build.plugins.plugin.version' for org.springframework.boot:spring-boot-maven-plugin is missing. @ line 98, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.laerdal:okpi-kpi-service:jar:0.0.1-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.springframework.boot:spring-boot-maven-plugin is missing. @ line 74, column 21
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] 
+[INFO] --------------------< com.laerdal:okpi-kpi-service >--------------------
+[INFO] Building okpi-kpi-service 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.0-RC1:run (default-cli) > test-compile @ okpi-kpi-service >>>
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ okpi-kpi-service ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ okpi-kpi-service ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 28 source files with javac [debug target 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ okpi-kpi-service ---
+[INFO] skip non existing resourceDirectory C:\Users\INSSA6\OneDrive - Laerdal Medical AS\Desktop\okpi\okpi-kpi-service\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ okpi-kpi-service ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug target 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] <<< spring-boot:4.1.0-RC1:run (default-cli) < test-compile @ okpi-kpi-service <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.0-RC1:run (default-cli) @ okpi-kpi-service ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-05-11T12:24:13.752+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] c.l.okpi.kpi.OkpiKpiServiceApplication   : Starting OkpiKpiServiceApplication using Java 21.0.10 with PID 2528 (C:\Users\INSSA6\OneDrive - Laerdal Medical AS\Desktop\okpi\okpi-kpi-service\target\classes started by INSSA6 in C:\Users\INSSA6\OneDrive - Laerdal Medical AS\Desktop\okpi\okpi-kpi-service)
+2026-05-11T12:24:13.757+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] c.l.okpi.kpi.OkpiKpiServiceApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-05-11T12:24:15.233+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-11T12:24:15.504+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 255 ms. Found 2 JPA repository interfaces.
+2026-05-11T12:24:15.926+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=ead4964a-34ca-3f2c-93b3-3ecf62a227ca
+2026-05-11T12:24:16.147+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.cloud.client.loadbalancer.LoadBalancerAutoConfiguration$DeferringLoadBalancerInterceptorConfig' of type [org.springframework.cloud.client.loadbalancer.LoadBalancerAutoConfiguration$DeferringLoadBalancerInterceptorConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [lbRestClientPostProcessor] is declared through a non-static factory method on that class; consider declaring it as static instead.
+2026-05-11T12:24:16.152+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [           main] trationDelegate$BeanPostProcessorChecker : Bean 'deferringLoadBalancerInterceptor' of type [org.springframework.cloud.client.loadbalancer.DeferringLoadBalancerInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [lbRestClientPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies.
+2026-05-11T12:24:16.459+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+2026-05-11T12:24:16.475+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-11T12:24:16.476+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-05-11T12:24:16.583+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-11T12:24:16.585+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2747 ms
+2026-05-11T12:24:16.719+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-11T12:24:17.170+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4c6bba7d
+2026-05-11T12:24:17.174+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-11T12:24:17.301+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-05-11T12:24:17.302+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-05-11T12:24:17.303+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-05-11T12:24:17.329+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://localhost:3306/okpi_kpi (MySQL 8.0)
+2026-05-11T12:24:17.408+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.040s)
+2026-05-11T12:24:17.433+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `okpi_kpi`: 2
+2026-05-11T12:24:17.438+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.f.core.internal.command.DbMigrate      : Schema `okpi_kpi` is up to date. No migration necessary.
+2026-05-11T12:24:17.578+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-11T12:24:17.679+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-05-11T12:24:17.735+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-11T12:24:18.072+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-11T12:24:18.149+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-11T12:24:19.546+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-11T12:24:19.553+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-11T12:24:20.263+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-11T12:24:21.070+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-05-11T12:24:21.120+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [           main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-05-11T12:24:21.156+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+2026-05-11T12:24:21.288+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+2026-05-11T12:24:21.295+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T12:24:21.327+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+2026-05-11T12:24:21.327+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+2026-05-11T12:24:21.328+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+2026-05-11T12:24:21.328+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+2026-05-11T12:24:21.328+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+2026-05-11T12:24:21.329+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+2026-05-11T12:24:21.329+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+2026-05-11T12:24:21.758+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+2026-05-11T12:24:21.762+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-05-11T12:24:21.767+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-05-11T12:24:21.774+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1778482461772 with initial instances count: 4
+2026-05-11T12:24:21.778+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application OKPI-KPI-SERVICE with eureka with status UP
+2026-05-11T12:24:21.779+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1778482461779, current=UP, previous=STARTING]
+2026-05-11T12:24:21.782+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [nfoReplicator-0] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_OKPI-KPI-SERVICE/LMPG055ZBN.mshome.net:OKPI-KPI-SERVICE:8084: registering service...
+2026-05-11T12:24:21.806+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8084 (http) with context path ''
+2026-05-11T12:24:21.809+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 8084
+2026-05-11T12:24:21.828+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [           main] c.l.okpi.kpi.OkpiKpiServiceApplication   : Started OkpiKpiServiceApplication in 8.786 seconds (process running for 9.676)
+2026-05-11T12:24:21.840+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [nfoReplicator-0] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_OKPI-KPI-SERVICE/LMPG055ZBN.mshome.net:OKPI-KPI-SERVICE:8084 - registration status: 204
+2026-05-11T12:25:59.500+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [nio-8084-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-11T12:25:59.501+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [nio-8084-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-11T12:25:59.503+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [nio-8084-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: insert into kpi_definitions (created_at,description,frequency,name,owner_id,unit,updated_at) values (?,?,?,?,?,?,?)
+Hibernate: select ke1_0.id,ke1_0.created_at,ke1_0.kpi_definition_id,ke1_0.note,ke1_0.recorded_at,ke1_0.value from kpi_entries ke1_0 left join kpi_definitions kd1_0 on kd1_0.id=ke1_0.kpi_definition_id where kd1_0.id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: select ke1_0.id,ke1_0.created_at,ke1_0.kpi_definition_id,ke1_0.note,ke1_0.recorded_at,ke1_0.value from kpi_entries ke1_0 left join kpi_definitions kd1_0 on kd1_0.id=ke1_0.kpi_definition_id where kd1_0.id=?
+Hibernate: select e1_0.kpi_definition_id,e1_0.id,e1_0.created_at,e1_0.note,e1_0.recorded_at,e1_0.value from kpi_entries e1_0 where e1_0.kpi_definition_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: select e1_0.kpi_definition_id,e1_0.id,e1_0.created_at,e1_0.note,e1_0.recorded_at,e1_0.value from kpi_entries e1_0 where e1_0.kpi_definition_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: insert into kpi_entries (created_at,kpi_definition_id,note,recorded_at,value) values (?,?,?,?,?)
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: insert into kpi_entries (created_at,kpi_definition_id,note,recorded_at,value) values (?,?,?,?,?)
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: select e1_0.kpi_definition_id,e1_0.id,e1_0.created_at,e1_0.note,e1_0.recorded_at,e1_0.value from kpi_entries e1_0 where e1_0.kpi_definition_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: select e1_0.kpi_definition_id,e1_0.id,e1_0.created_at,e1_0.note,e1_0.recorded_at,e1_0.value from kpi_entries e1_0 where e1_0.kpi_definition_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: select ke1_0.id,ke1_0.created_at,ke1_0.kpi_definition_id,ke1_0.note,ke1_0.recorded_at,ke1_0.value from kpi_entries ke1_0 left join kpi_definitions kd1_0 on kd1_0.id=ke1_0.kpi_definition_id where kd1_0.id=?
+Hibernate: select e1_0.kpi_definition_id,e1_0.id,e1_0.created_at,e1_0.note,e1_0.recorded_at,e1_0.value from kpi_entries e1_0 where e1_0.kpi_definition_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.id=?
+Hibernate: select ke1_0.id,ke1_0.created_at,ke1_0.kpi_definition_id,ke1_0.note,ke1_0.recorded_at,ke1_0.value from kpi_entries ke1_0 left join kpi_definitions kd1_0 on kd1_0.id=ke1_0.kpi_definition_id where kd1_0.id=?
+Hibernate: select e1_0.kpi_definition_id,e1_0.id,e1_0.created_at,e1_0.note,e1_0.recorded_at,e1_0.value from kpi_entries e1_0 where e1_0.kpi_definition_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+Hibernate: select kd1_0.id,kd1_0.created_at,kd1_0.description,kd1_0.frequency,kd1_0.name,kd1_0.owner_id,kd1_0.unit,kd1_0.updated_at from kpi_definitions kd1_0 where kd1_0.owner_id=?
+2026-05-11T12:29:21.340+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T12:34:22.964+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T12:41:18.123+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3m25s913ms165µs700ns).
+2026-05-11T12:42:21.972+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T12:47:21.979+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T12:52:21.996+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T13:43:58.312+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=47m9s966ms587µs300ns).
+2026-05-11T13:44:01.969+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T14:07:12.784+05:30  WARN 2528 --- [OKPI-KPI-SERVICE] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=21m14s428ms138µs900ns).
+2026-05-11T14:09:46.398+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T14:14:46.408+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T14:19:46.416+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T14:24:46.429+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-05-11T14:29:46.448+05:30  INFO 2528 --- [OKPI-KPI-SERVICE] [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:10 h
+[INFO] Finished at: 2026-05-11T14:34:18+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.0-RC1:run (default-cli) on project okpi-kpi-service: Process terminated with exit code: 1073807364 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

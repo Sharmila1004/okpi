@@ -53,6 +53,14 @@ public class ObjectiveServiceImpl implements ObjectiveService {
         objective.setOwnerId(userId);
         objective = objectiveRepository.save(objective);
 
+        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
+            for (Long uid : request.getAssigneeIds()) {
+                if (uid == null) continue;
+                objective.getAssignees().add(new com.laerdal.okpi.objective.entity.ObjectiveAssignee(uid, objective));
+            }
+            objective = objectiveRepository.save(objective);
+        }
+
         log.info("Objective created with id {}", objective.getId());
         return objectiveMapper.toResponse(objective);
     }
@@ -64,8 +72,11 @@ public class ObjectiveServiceImpl implements ObjectiveService {
         ObjectiveStatus normalizedStatus = status == null || status.isBlank()
                 ? null
                 : ObjectiveStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
-        Page<Objective> objectivePage = objectiveRepository.findWithFilters(
-                normalizedStatus, ownerId, search, pageable);
+        Long userId = requestContext.getUserId();
+        String userRole = requestContext.getUserRole();
+        Page<Objective> objectivePage = "MEMBER".equals(userRole)
+                ? objectiveRepository.findAssignedOrOwnedWithFilters(userId, normalizedStatus, search, pageable)
+                : objectiveRepository.findVisibleWithFilters(normalizedStatus, ownerId, search, pageable);
         List<ObjectiveResponse> content = objectivePage.getContent().stream()
                 .map(objectiveMapper::toResponse)
                 .toList();
@@ -82,17 +93,24 @@ public class ObjectiveServiceImpl implements ObjectiveService {
     @Override
     @Transactional(readOnly = true)
     public List<ObjectiveResponse> getAllForCurrentUser() {
-        Long userId = requestContext.getUserId() != null ? requestContext.getUserId() : 0L;
-        return objectiveRepository.findAllByOwnerIdAndIsDeletedFalse(userId).stream()
+        Long userId = requestContext.getUserId();
+        if (userId == null) {
+            return java.util.Collections.emptyList();
+        }
+        return objectiveRepository.findAllVisibleToUser(userId).stream()
                 .map(objectiveMapper::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ObjectiveDetailResponse getById(Long objectiveId) {
+    public ObjectiveDetailResponse getById(Long objectiveId, Long userId, String userRole) {
         Objective objective = objectiveRepository.findByIdAndIsDeletedFalse(objectiveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
+
+        if ("MEMBER".equals(userRole) && !canUserViewObjective(objective, userId)) {
+            throw new AccessDeniedException("Members can only view assigned or owned objectives");
+        }
 
         List<KeyResultResponse> keyResults = objective.getKeyResults().stream()
                 .map(keyResultMapper::toResponse)
@@ -112,21 +130,20 @@ public class ObjectiveServiceImpl implements ObjectiveService {
 
         requireOwnerOrAdmin(objective);
 
-        if (request.getTitle() != null) {
-            objective.setTitle(request.getTitle());
+        if (request.getTitle() != null) objective.setTitle(request.getTitle());
+        if (request.getDescription() != null) objective.setDescription(request.getDescription());
+        if (request.getStatus() != null) objective.setStatus(request.getStatus());
+        if (request.getStartDate() != null) objective.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) objective.setEndDate(request.getEndDate());
+
+        if (request.getAssigneeIds() != null) {
+            objective.getAssignees().clear();
+            for (Long uid : request.getAssigneeIds()) {
+                if (uid == null) continue;
+                objective.getAssignees().add(new com.laerdal.okpi.objective.entity.ObjectiveAssignee(uid, objective));
+            }
         }
-        if (request.getDescription() != null) {
-            objective.setDescription(request.getDescription());
-        }
-        if (request.getStatus() != null) {
-            objective.setStatus(request.getStatus());
-        }
-        if (request.getStartDate() != null) {
-            objective.setStartDate(request.getStartDate());
-        }
-        if (request.getEndDate() != null) {
-            objective.setEndDate(request.getEndDate());
-        }
+
         return objectiveMapper.toResponse(objectiveRepository.save(objective));
     }
 
@@ -143,21 +160,37 @@ public class ObjectiveServiceImpl implements ObjectiveService {
     @Override
     @Transactional(readOnly = true)
     public OkrDashboardResponse dashboard(Long ownerId) {
-        Long effectiveOwnerId = ownerId != null ? ownerId : requestContext.getUserId();
+        String userRole = requestContext.getUserRole();
+        Long userId = requestContext.getUserId();
 
-        long objectiveCount = effectiveOwnerId == null
-                ? objectiveRepository.findWithFilters(null, null, null, PageRequest.of(0, 1)).getTotalElements()
-                : objectiveRepository.countByOwnerId(effectiveOwnerId);
-        long keyResultCount = keyResultRepository.countForDashboard(effectiveOwnerId);
+        boolean isPrivileged = "ADMIN".equals(userRole) || "MANAGER".equals(userRole);
+        Long effectiveOwnerId = ownerId != null ? ownerId : isPrivileged ? null : userId;
 
-        List<ObjectiveResponse> objectives = (effectiveOwnerId == null
-                ? objectiveRepository.findWithFilters(null, null, null,
-                    PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent()
-                : objectiveRepository.findWithFilters(null, effectiveOwnerId, null,
-                    PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent())
-                .stream()
-                .map(objectiveMapper::toResponse)
-                .toList();
+        long objectiveCount;
+        long keyResultCount;
+        List<ObjectiveResponse> objectives;
+
+        if ("MEMBER".equals(userRole) && ownerId == null && userId != null) {
+            objectiveCount = objectiveRepository.countVisibleToUser(userId);
+            keyResultCount = keyResultRepository.countVisibleToUser(userId);
+            objectives = objectiveRepository.findAssignedOrOwnedWithFilters(
+                            userId, null, null,
+                            PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt")))
+                    .getContent().stream()
+                    .map(objectiveMapper::toResponse)
+                    .toList();
+        } else {
+            objectiveCount = objectiveRepository
+                    .findVisibleWithFilters(null, effectiveOwnerId, null, PageRequest.of(0, 1))
+                    .getTotalElements();
+            keyResultCount = keyResultRepository.countForDashboard(effectiveOwnerId);
+            objectives = objectiveRepository
+                    .findVisibleWithFilters(null, effectiveOwnerId, null,
+                            PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt")))
+                    .getContent().stream()
+                    .map(objectiveMapper::toResponse)
+                    .toList();
+        }
 
         return OkrDashboardResponse.builder()
                 .objectiveCount(objectiveCount)
@@ -166,17 +199,19 @@ public class ObjectiveServiceImpl implements ObjectiveService {
                 .build();
     }
 
+    private boolean canUserViewObjective(Objective objective, Long userId) {
+        if (userId == null) return false;
+        if (userId.equals(objective.getOwnerId())) return true;
+        return objective.getAssignees().stream().anyMatch(a -> userId.equals(a.getUserId()));
+    }
+
     private void requireOwnerOrAdmin(Objective objective) {
         Long userId = requestContext.getUserId();
         String role = requestContext.getUserRole();
-        if (userId == null || role == null) {
-            throw new AccessDeniedException("Missing authentication headers");
-        }
-        if ("ADMIN".equals(role)) {
-            return;
-        }
+        if (userId == null || role == null) throw new AccessDeniedException("Missing authentication headers");
+        if ("ADMIN".equals(role) || "MANAGER".equals(role)) return;
         if (!userId.equals(objective.getOwnerId())) {
-            throw new AccessDeniedException("Only the owner or admin can modify this objective");
+            throw new AccessDeniedException("Only the owner, manager, or admin can modify this objective");
         }
     }
 }

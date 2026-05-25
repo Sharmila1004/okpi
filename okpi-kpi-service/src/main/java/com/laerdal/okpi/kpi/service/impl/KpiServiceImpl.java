@@ -6,18 +6,21 @@ import com.laerdal.okpi.kpi.dto.response.KpiDetailResponse;
 import com.laerdal.okpi.kpi.dto.response.KpiEntryResponse;
 import com.laerdal.okpi.kpi.dto.response.KpiResponse;
 import com.laerdal.okpi.kpi.entity.KpiDefinition;
+import com.laerdal.okpi.kpi.exception.AccessDeniedException;
 import com.laerdal.okpi.kpi.exception.ResourceNotFoundException;
 import com.laerdal.okpi.kpi.mapper.KpiEntryMapper;
 import com.laerdal.okpi.kpi.mapper.KpiMapper;
 import com.laerdal.okpi.kpi.repository.KpiDefinitionRepository;
 import com.laerdal.okpi.kpi.security.RequestContext;
 import com.laerdal.okpi.kpi.service.KpiService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 
 @Service
+@Slf4j
 public class KpiServiceImpl implements KpiService {
 
     private final KpiDefinitionRepository kpiDefinitionRepository;
@@ -37,8 +40,11 @@ public class KpiServiceImpl implements KpiService {
 
     @Override
     public KpiResponse create(CreateKpiRequest request) {
+        Long userId = requestContext.getUserId() != null ? requestContext.getUserId() : 0L;
+        log.info("Creating KPI '{}' for user {}", request.getName(), userId);
+
         KpiDefinition definition = KpiDefinition.builder()
-                .ownerId(requestContext.getUserId() != null ? requestContext.getUserId() : 0L)
+                .ownerId(userId)
                 .name(request.getName())
                 .description(request.getDescription())
                 .unit(request.getUnit())
@@ -46,12 +52,16 @@ public class KpiServiceImpl implements KpiService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
-        return kpiMapper.toResponse(kpiDefinitionRepository.save(definition));
+
+        KpiDefinition saved = kpiDefinitionRepository.save(definition);
+        log.info("KPI created with id {}", saved.getId());
+        return kpiMapper.toResponse(saved);
     }
 
     @Override
     public List<KpiResponse> getAllForCurrentUser() {
         Long userId = requestContext.getUserId() != null ? requestContext.getUserId() : 0L;
+        log.info("Fetching all KPIs for user {}", userId);
         return kpiDefinitionRepository.findAllByOwnerId(userId).stream()
                 .map(kpiMapper::toResponse)
                 .toList();
@@ -59,8 +69,20 @@ public class KpiServiceImpl implements KpiService {
 
     @Override
     public KpiDetailResponse getById(Long kpiId) {
+        log.info("Fetching KPI with id {}", kpiId);
         KpiDefinition definition = kpiDefinitionRepository.findById(kpiId)
-                .orElseThrow(() -> new ResourceNotFoundException("KPI not found"));
+                .orElseThrow(() -> {
+                    log.error("KPI not found with id {}", kpiId);
+                    return new ResourceNotFoundException("KPI not found");
+                });
+
+        // MEMBERS can only view their own KPIs
+        String userRole = requestContext.getUserRole();
+        Long userId = requestContext.getUserId();
+        if ("MEMBER".equals(userRole) && !userId.equals(definition.getOwnerId())) {
+            log.warn("Access denied: User {} attempted to access KPI {} owned by {}", userId, kpiId, definition.getOwnerId());
+            throw new AccessDeniedException("Members can only view their own KPIs");
+        }
 
         List<KpiEntryResponse> entries = definition.getEntries().stream()
                 .map(kpiEntryMapper::toResponse)
@@ -74,8 +96,20 @@ public class KpiServiceImpl implements KpiService {
 
     @Override
     public KpiResponse update(Long kpiId, UpdateKpiRequest request) {
+        log.info("Updating KPI with id {}", kpiId);
         KpiDefinition definition = kpiDefinitionRepository.findById(kpiId)
-                .orElseThrow(() -> new ResourceNotFoundException("KPI not found"));
+                .orElseThrow(() -> {
+                    log.error("KPI not found with id {}", kpiId);
+                    return new ResourceNotFoundException("KPI not found");
+                });
+
+        // Only owner or admin can update KPI
+        Long userId = requestContext.getUserId();
+        String userRole = requestContext.getUserRole();
+        if (!userId.equals(definition.getOwnerId()) && !"ADMIN".equals(userRole)) {
+            log.warn("Access denied: User {} attempted to update KPI {} owned by {}", userId, kpiId, definition.getOwnerId());
+            throw new AccessDeniedException("Only the owner or admin can update this KPI");
+        }
 
         if (request.getName() != null) {
             definition.setName(request.getName());
@@ -90,14 +124,19 @@ public class KpiServiceImpl implements KpiService {
             definition.setFrequency(request.getFrequency());
         }
         definition.setUpdatedAt(Instant.now());
-        return kpiMapper.toResponse(kpiDefinitionRepository.save(definition));
+        KpiDefinition saved = kpiDefinitionRepository.save(definition);
+        log.info("KPI {} updated successfully", kpiId);
+        return kpiMapper.toResponse(saved);
     }
 
     @Override
     public void delete(Long kpiId) {
+        log.info("Deleting KPI with id {}", kpiId);
         if (!kpiDefinitionRepository.existsById(kpiId)) {
+            log.error("KPI not found with id {}", kpiId);
             throw new ResourceNotFoundException("KPI not found");
         }
         kpiDefinitionRepository.deleteById(kpiId);
+        log.info("KPI {} deleted successfully", kpiId);
     }
 }

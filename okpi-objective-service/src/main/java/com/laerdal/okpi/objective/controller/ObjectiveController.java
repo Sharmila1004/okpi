@@ -9,6 +9,7 @@ import com.laerdal.okpi.objective.dto.response.PagedResponse;
 import com.laerdal.okpi.objective.service.ObjectiveService;
 import com.laerdal.okpi.objective.security.RequestContext;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 @RequestMapping("/api/v1/objectives")
 @RequiredArgsConstructor
 @Tag(name = "Objectives", description = "OKR Objective management APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class ObjectiveController {
 
     private final ObjectiveService objectiveService;
@@ -42,29 +44,29 @@ public class ObjectiveController {
         return objectiveService.create(request, userId, userRole);
     }
 
-    @GetMapping
-    @Operation(summary = "List objectives with pagination and filtering")
-    public PagedResponse<ObjectiveResponse> list(@RequestParam(name = "page", defaultValue = "0") int page,
-                                                 @RequestParam(name = "size", defaultValue = "10") int size,
-                                                 @RequestParam(name = "status", required = false) String status,
-                                                 @RequestParam(name = "ownerId", required = false) Long ownerId,
-                                                 @RequestParam(name = "search", required = false) String search) {
-        return objectiveService.list(page, size, status, ownerId, search);
-    }
+     @GetMapping
+     @Operation(summary = "List objectives with pagination and filtering")
+     public PagedResponse<ObjectiveResponse> list(@RequestParam(name = "page", defaultValue = "0") int page,
+                                                  @RequestParam(name = "size", defaultValue = "10") int size,
+                                                  @RequestParam(name = "status", required = false) String status,
+                                                  @RequestParam(name = "ownerId", required = false) Long ownerId,
+                                                  @RequestParam(name = "search", required = false) String search) {
+         return objectiveService.list(page, size, status, ownerId, search);
+     }
 
-    @GetMapping("/{objectiveId}")
-    @Operation(summary = "Get objective details with key results")
-    public ObjectiveDetailResponse getById(@PathVariable("objectiveId") Long objectiveId) {
-        return objectiveService.getById(objectiveId);
-    }
+     @GetMapping("/{objectiveId:\\d+}")
+     @Operation(summary = "Get objective details with key results")
+     public ObjectiveDetailResponse getById(@PathVariable("objectiveId") Long objectiveId) {
+         return objectiveService.getById(objectiveId, requestContext.getUserId(), requestContext.getUserRole());
+     }
 
-    @PutMapping("/{objectiveId}")
+    @PutMapping("/{objectiveId:\\d+}")
     public ObjectiveResponse update(@PathVariable("objectiveId") Long objectiveId,
                                     @Valid @RequestBody UpdateObjectiveRequest request) {
         return objectiveService.update(objectiveId, request);
     }
 
-    @DeleteMapping("/{objectiveId}")
+    @DeleteMapping("/{objectiveId:\\d+}")
     public void delete(@PathVariable("objectiveId") Long objectiveId) {
         objectiveService.delete(objectiveId);
     }

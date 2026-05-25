@@ -13,7 +13,7 @@ public interface ObjectiveService {
     ObjectiveResponse create(CreateObjectiveRequest request, Long userId, String userRole);
     PagedResponse<ObjectiveResponse> list(int page, int size, String status, Long ownerId, String search);
     List<ObjectiveResponse> getAllForCurrentUser();
-    ObjectiveDetailResponse getById(Long objectiveId);
+    ObjectiveDetailResponse getById(Long objectiveId, Long userId, String userRole);
     ObjectiveResponse update(Long objectiveId, UpdateObjectiveRequest request);
     void delete(Long objectiveId);
     OkrDashboardResponse dashboard(Long ownerId);

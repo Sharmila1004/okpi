@@ -93,14 +93,16 @@ class ObjectiveControllerTest {
     @Test
     void getByIdReturnsObjectiveDetails() throws Exception {
         ObjectiveDetailResponse response = objectiveDetailResponse();
-        when(objectiveService.getById(21L)).thenReturn(response);
+        when(requestContext.getUserId()).thenReturn(42L);
+        when(requestContext.getUserRole()).thenReturn("ADMIN");
+        when(objectiveService.getById(21L, 42L, "ADMIN")).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/objectives/21"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.objective.title").value("Grow Revenue"))
                 .andExpect(jsonPath("$.keyResults[0].title").value("Expand pipeline"));
 
-        verify(objectiveService).getById(21L);
+        verify(objectiveService).getById(21L, 42L, "ADMIN");
     }
 
     @Test

@@ -17,4 +17,13 @@ public interface KeyResultRepository extends JpaRepository<KeyResult, Long> {
               AND (:ownerId IS NULL OR kr.objective.ownerId = :ownerId)
             """)
     long countForDashboard(@Param("ownerId") Long ownerId);
+
+    @Query("""
+            SELECT COUNT(DISTINCT kr)
+            FROM KeyResult kr
+            LEFT JOIN kr.objective.assignees a
+            WHERE kr.objective.isDeleted = false
+              AND (kr.objective.ownerId = :userId OR a.userId = :userId)
+            """)
+    long countVisibleToUser(@Param("userId") Long userId);
 }

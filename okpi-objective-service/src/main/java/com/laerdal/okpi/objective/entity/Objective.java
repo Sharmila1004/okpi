@@ -68,7 +68,11 @@ public class Objective {
 
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<KeyResult> keyResults = new ArrayList<>();
+    private List<KeyResult> keyResults = new ArrayList();
+
+    @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ObjectiveAssignee> assignees = new ArrayList();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp

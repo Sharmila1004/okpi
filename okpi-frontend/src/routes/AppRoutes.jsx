@@ -11,6 +11,7 @@ import KpisListPage from "../pages/kpis/KpisListPage";
 import KpiDetailPage from "../pages/kpis/KpiDetailPage";
 import KpiFormPage from "../pages/kpis/KpiFormPage";
 import UsersManagementPage from "../pages/admin/UsersManagementPage";
+import ProfilePage from "../pages/account/ProfilePage";
 import NotFoundPage from "../pages/NotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -34,6 +35,14 @@ export default function AppRoutes() {
           }
         />
         <Route
+          path="/account"
+          element={
+            <LayoutRoute>
+              <ProfilePage />
+            </LayoutRoute>
+          }
+        />
+        <Route
           path="/objectives"
           element={
             <LayoutRoute>
@@ -41,14 +50,24 @@ export default function AppRoutes() {
             </LayoutRoute>
           }
         />
-        <Route
-          path="/objectives/new"
-          element={
-            <LayoutRoute>
-              <ObjectiveFormPage />
-            </LayoutRoute>
-          }
-        />
+        <Route element={<ProtectedRoute roles={[ROLES.MANAGER, ROLES.ADMIN]} />}>
+          <Route
+            path="/objectives/new"
+            element={
+              <LayoutRoute>
+                <ObjectiveFormPage />
+              </LayoutRoute>
+            }
+          />
+          <Route
+            path="/objectives/:objectiveId/edit"
+            element={
+              <LayoutRoute>
+                <ObjectiveFormPage />
+              </LayoutRoute>
+            }
+          />
+        </Route>
         <Route
           path="/objectives/:objectiveId"
           element={
@@ -58,10 +77,34 @@ export default function AppRoutes() {
           }
         />
         <Route
-          path="/objectives/:objectiveId/edit"
+          path="/insights"
           element={
             <LayoutRoute>
-              <ObjectiveFormPage />
+              <KpisListPage />
+            </LayoutRoute>
+          }
+        />
+        <Route
+          path="/insights/new"
+          element={
+            <LayoutRoute>
+              <KpiFormPage />
+            </LayoutRoute>
+          }
+        />
+        <Route
+          path="/insights/:kpiId"
+          element={
+            <LayoutRoute>
+              <KpiDetailPage />
+            </LayoutRoute>
+          }
+        />
+        <Route
+          path="/insights/:kpiId/edit"
+          element={
+            <LayoutRoute>
+              <KpiFormPage />
             </LayoutRoute>
           }
         />

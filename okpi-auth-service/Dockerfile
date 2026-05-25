@@ -1,11 +1,9 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
-COPY pom.xml pom.xml
-COPY okpi-auth-service/pom.xml okpi-auth-service/pom.xml
-COPY okpi-auth-service/src okpi-auth-service/src
+COPY . /workspace
 
-RUN mvn -pl okpi-auth-service -am clean package -DskipTests
+RUN mvn -T1C -f pom.xml clean package -DskipTests -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

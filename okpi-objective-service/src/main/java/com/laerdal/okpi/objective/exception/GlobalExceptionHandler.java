@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -25,6 +27,13 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    private final Environment env;
+
+    @Autowired
+    public GlobalExceptionHandler(Environment env) {
+        this.env = env;
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -101,9 +110,24 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneral(Exception ex, HttpServletRequest request) {
         log.error("Unexpected error", ex);
+
+        String message = "An unexpected error occurred";
+        try {
+            String[] activeProfiles = env.getActiveProfiles();
+            boolean isDev = Arrays.stream(activeProfiles)
+                    .anyMatch(p -> p.equalsIgnoreCase("dev") || p.equalsIgnoreCase("local") || p.equalsIgnoreCase("development"));
+            boolean debugFlag = Boolean.parseBoolean(env.getProperty("okpi.debug.errors", "false"));
+
+            if (isDev || debugFlag) {
+                message = ex.getMessage() != null ? ex.getMessage() : ex.toString();
+            }
+        } catch (Exception e) {
+            // ignore and keep generic message
+        }
+
         return new ErrorResponse(
                 LocalDateTime.now(), 500, "Internal Server Error",
-                "An unexpected error occurred", request.getRequestURI());
+                message, request.getRequestURI());
     }
 
     private String resolveUnreadableBodyMessage(HttpMessageNotReadableException ex) {

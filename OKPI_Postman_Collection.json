@@ -1,0 +1,485 @@
+{
+  "info": {
+    "_postman_id": "okpi-collection",
+    "name": "OKPI Platform API",
+    "description": "Complete API collection for OKPI microservices platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\",\"password\":\"Password123\",\"firstName\":\"John\",\"lastName\":\"Doe\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\",\"password\":\"Password123\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\":\"{{refresh_token}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users Management",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/users?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "role",
+                  "value": "ADMIN",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/users/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Change User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\":\"ADMIN\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/users/2/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "users", "2", "role"]
+            }
+          }
+        },
+        {
+          "name": "Change User Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"isActive\":true}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/users/2/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "users", "2", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Objectives",
+      "item": [
+        {
+          "name": "Create Objective",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Improve Customer Satisfaction\",\"description\":\"Reach 95% NPS\",\"status\":\"DRAFT\",\"startDate\":\"2026-05-12\",\"endDate\":\"2026-08-12\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/objectives",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "objectives"]
+            }
+          }
+        },
+        {
+          "name": "List Objectives",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/objectives?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "objectives"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Objective Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/objectives/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "objectives", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Objective",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"ON_TRACK\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/objectives/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "objectives", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Objective",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/objectives/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "objectives", "1"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/objectives/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "objectives", "dashboard"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "KPIs",
+      "item": [
+        {
+          "name": "Create KPI",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Monthly Revenue\",\"description\":\"Track revenue\",\"unit\":\"USD\",\"frequency\":\"MONTHLY\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/kpis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "kpis"]
+            }
+          }
+        },
+        {
+          "name": "List KPIs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/kpis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "kpis"]
+            }
+          }
+        },
+        {
+          "name": "Get KPI Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/kpis/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "kpis", "1"]
+            }
+          }
+        },
+        {
+          "name": "Record KPI Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"value\":150000,\"recordedAt\":\"2026-05-12T10:00:00\",\"note\":\"May revenue\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/kpis/1/entries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "kpis", "1", "entries"]
+            }
+          }
+        },
+        {
+          "name": "Update KPI",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Monthly Revenue Updated\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/kpis/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "kpis", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete KPI",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/kpis/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "kpis", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

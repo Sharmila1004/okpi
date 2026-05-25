@@ -1,5 +1,16 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+function resolveApiBaseUrl() {
+  const raw = import.meta.env.VITE_API_BASE_URL;
+  const trimmed = typeof raw === "string" ? raw.trim() : "";
+  if (trimmed) {
+    return trimmed.replace(/\/$/, "");
+  }
+  if (import.meta.env.DEV) {
+    return "";
+  }
+  return "http://localhost:18080";
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const STORAGE_KEYS = {
   accessToken: "okpi_access_token",
@@ -22,17 +33,17 @@ export const OBJECTIVE_STATUSES = [
 ];
 
 export const STATUS_COLORS = {
-  ACTIVE: "bg-emerald-100 text-emerald-700",
-  ON_TRACK: "bg-emerald-100 text-emerald-700",
-  AT_RISK: "bg-amber-100 text-amber-700",
-  OFF_TRACK: "bg-rose-100 text-rose-700",
-  BLOCKED: "bg-rose-100 text-rose-700",
-  COMPLETED: "bg-sky-100 text-sky-700",
-  DRAFT: "bg-slate-200 text-slate-700"
+  ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  ON_TRACK: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  AT_RISK: "bg-amber-50 text-amber-700 ring-amber-200",
+  OFF_TRACK: "bg-rose-50 text-rose-700 ring-rose-200",
+  BLOCKED: "bg-rose-50 text-rose-700 ring-rose-200",
+  COMPLETED: "bg-sky-50 text-sky-700 ring-sky-200",
+  DRAFT: "bg-slate-100 text-slate-600 ring-slate-200"
 };
 
 export const NAV_ITEMS = [
   { label: "Dashboard", to: "/" },
   { label: "Objectives", to: "/objectives" },
-  { label: "KPIs", to: "/kpis" }
+  { label: "Insights", to: "/insights" }
 ];

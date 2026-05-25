@@ -41,31 +41,47 @@ public class KeyResultServiceImpl implements KeyResultService {
     @Override
     @Transactional
     public KeyResultResponse create(Long objectiveId, CreateKeyResultRequest request) {
-        Objective objective = objectiveRepository.findById(objectiveId)
+        Objective objective = objectiveRepository.findByIdAndIsDeletedFalse(objectiveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
         requireOwnerOrAdmin(objective);
+
+        BigDecimal startValue = request.getStartValue() != null
+                ? request.getStartValue()
+                : BigDecimal.ZERO;
+
+        BigDecimal targetValue = request.getTargetValue() != null
+                ? request.getTargetValue()
+                : BigDecimal.valueOf(100);
+
+        BigDecimal currentValue = startValue;
 
         KeyResult keyResult = KeyResult.builder()
                 .objective(objective)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .metricType(request.getMetricType())
-                .startValue(request.getStartValue())
-                .currentValue(request.getStartValue())
-                .targetValue(request.getTargetValue())
+                .startValue(startValue)
+                .currentValue(currentValue)
+                .targetValue(targetValue)
                 .status(KeyResultStatus.NOT_STARTED)
+                .updatedByUserId(requestContext.getUserId())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
 
         KeyResult saved = keyResultRepository.save(keyResult);
         recalculateObjectiveProgress(objective);
+
         return keyResultMapper.toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<KeyResultResponse> getByObjectiveId(Long objectiveId) {
+        Objective objective = objectiveRepository.findByIdAndIsDeletedFalse(objectiveId)
+                .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
+        requireViewer(objective);
+
         return keyResultRepository.findAllByObjective_Id(objectiveId).stream()
                 .map(keyResultMapper::toResponse)
                 .toList();
@@ -75,27 +91,51 @@ public class KeyResultServiceImpl implements KeyResultService {
     @Transactional
     public KeyResultResponse update(Long keyResultId, UpdateKeyResultRequest request) {
         requireAuthenticated();
+
         KeyResult keyResult = keyResultRepository.findById(keyResultId)
                 .orElseThrow(() -> new ResourceNotFoundException("Key result not found"));
 
-        if (request.getTitle() != null) {
+        Objective objective = keyResult.getObjective();
+
+        boolean canManage = canManage(objective);
+        boolean canUpdateProgress = canManage || isAssignedToObjective(objective);
+
+        if (!canUpdateProgress) {
+            throw new AccessDeniedException("Only the owner, admin, or assigned users can update this key result");
+        }
+
+        if (!canManage && (request.getTitle() != null
+                || request.getDescription() != null
+                || request.getTargetValue() != null)) {
+            throw new AccessDeniedException("Assigned members can only update progress and status");
+        }
+
+        if (canManage && request.getTitle() != null) {
             keyResult.setTitle(request.getTitle());
         }
-        if (request.getDescription() != null) {
+
+        if (canManage && request.getDescription() != null) {
             keyResult.setDescription(request.getDescription());
         }
+
         if (request.getCurrentValue() != null) {
             keyResult.setCurrentValue(request.getCurrentValue());
         }
-        if (request.getTargetValue() != null) {
+
+        if (canManage && request.getTargetValue() != null) {
             keyResult.setTargetValue(request.getTargetValue());
         }
+
         if (request.getStatus() != null) {
             keyResult.setStatus(request.getStatus());
         }
+
+        keyResult.setUpdatedByUserId(requestContext.getUserId());
         keyResult.setUpdatedAt(Instant.now());
+
         KeyResult saved = keyResultRepository.save(keyResult);
         recalculateObjectiveProgress(saved.getObjective());
+
         return keyResultMapper.toResponse(saved);
     }
 
@@ -104,8 +144,11 @@ public class KeyResultServiceImpl implements KeyResultService {
     public void delete(Long keyResultId) {
         KeyResult keyResult = keyResultRepository.findById(keyResultId)
                 .orElseThrow(() -> new ResourceNotFoundException("Key result not found"));
+
         requireOwnerOrAdmin(keyResult.getObjective());
+
         Objective objective = keyResult.getObjective();
+
         keyResultRepository.delete(keyResult);
         recalculateObjectiveProgress(objective);
     }
@@ -118,12 +161,31 @@ public class KeyResultServiceImpl implements KeyResultService {
 
     private void requireOwnerOrAdmin(Objective objective) {
         requireAuthenticated();
-        if ("ADMIN".equals(requestContext.getUserRole())) {
-            return;
-        }
-        if (!requestContext.getUserId().equals(objective.getOwnerId())) {
+        if (!canManage(objective)) {
             throw new AccessDeniedException("Only the owner or admin can modify this objective");
         }
+    }
+
+    private void requireViewer(Objective objective) {
+        requireAuthenticated();
+        if (canManage(objective) || isAssignedToObjective(objective)) {
+            return;
+        }
+        throw new AccessDeniedException("Only the owner, admin, or assigned users can view this objective");
+    }
+
+    private boolean canManage(Objective objective) {
+        if ("ADMIN".equals(requestContext.getUserRole()) || "MANAGER".equals(requestContext.getUserRole())) {
+            return true;
+        }
+        return requestContext.getUserId() != null
+                && requestContext.getUserId().equals(objective.getOwnerId());
+    }
+
+    private boolean isAssignedToObjective(Objective objective) {
+        Long userId = requestContext.getUserId();
+        return userId != null && objective.getAssignees().stream()
+                .anyMatch(assignee -> userId.equals(assignee.getUserId()));
     }
 
     private void recalculateObjectiveProgress(Objective objective) {
@@ -138,6 +200,7 @@ public class KeyResultServiceImpl implements KeyResultService {
         }
 
         BigDecimal sum = BigDecimal.ZERO;
+
         for (KeyResult kr : keyResults) {
             BigDecimal start = kr.getStartValue() == null ? BigDecimal.ZERO : kr.getStartValue();
             BigDecimal current = kr.getCurrentValue() == null ? BigDecimal.ZERO : kr.getCurrentValue();
@@ -145,8 +208,11 @@ public class KeyResultServiceImpl implements KeyResultService {
 
             BigDecimal denom = target.subtract(start);
             BigDecimal ratio;
+
             if (denom.compareTo(BigDecimal.ZERO) == 0) {
-                ratio = current.compareTo(target) >= 0 ? BigDecimal.ONE : BigDecimal.ZERO;
+                ratio = current.compareTo(target) >= 0
+                        ? BigDecimal.ONE
+                        : BigDecimal.ZERO;
             } else {
                 ratio = current.subtract(start)
                         .divide(denom, 6, java.math.RoundingMode.HALF_UP);
@@ -155,9 +221,11 @@ public class KeyResultServiceImpl implements KeyResultService {
             if (ratio.compareTo(BigDecimal.ZERO) < 0) {
                 ratio = BigDecimal.ZERO;
             }
+
             if (ratio.compareTo(BigDecimal.ONE) > 0) {
                 ratio = BigDecimal.ONE;
             }
+
             sum = sum.add(ratio);
         }
 

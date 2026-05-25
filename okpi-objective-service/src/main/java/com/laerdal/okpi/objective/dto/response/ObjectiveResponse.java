@@ -6,15 +6,21 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class ObjectiveResponse {
     private Long id;
+    private Long ownerId;
     private String title;
     private String description;
     private ObjectiveStatus status;
     private LocalDate startDate;
     private LocalDate endDate;
     private BigDecimal progressPercentage;
+    private java.util.List<Long> assigneeIds;
+    private int keyResultCount;
+    private LocalDateTime lastUpdatedAt;
+    private Long lastUpdatedByUserId;
 }

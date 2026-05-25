@@ -3,10 +3,10 @@ import Button from "../components/common/Button";
 
 export default function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sand px-4">
-      <div className="text-center">
+    <div className="flex min-h-screen items-center justify-center bg-[#eef3fb] px-4">
+      <div className="card-surface max-w-md p-8 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.4em] text-ember">404</p>
-        <h1 className="mt-4 text-4xl font-black text-ink">Page not found</h1>
+        <h1 className="mt-4 text-4xl font-black tracking-tight text-ink">Page not found</h1>
         <p className="mt-3 text-slate-500">
           The route does not exist or your session no longer has access to it.
         </p>

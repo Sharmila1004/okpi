@@ -1,9 +1,20 @@
--- Password: Admin@123 (BCrypt hashed)
-INSERT INTO users (email, password_hash, first_name, last_name, role)
+INSERT INTO users (
+    email,
+    password_hash,
+    first_name,
+    last_name,
+    role,
+    is_active,
+    created_at,
+    updated_at
+)
 VALUES (
            'admin@okpi.com',
-           '$2a$12$LJ3m4ys4VzpXoBSKOCvxnOWHOBGnMsPaq5.GKRZ0HLbTTgFJYPWm.',
-           'System',
+           'test123',
            'Admin',
-           'ADMIN'
+           'User',
+           'ADMIN',
+           true,
+           NOW(),
+           NOW()
        );

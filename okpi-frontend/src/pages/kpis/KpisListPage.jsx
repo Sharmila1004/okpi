@@ -9,6 +9,7 @@ import Pagination from "../../components/common/Pagination";
 import Table from "../../components/common/Table";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useFetch } from "../../hooks/useFetch";
+import { humanizeEnum } from "../../utils/display";
 
 const PAGE_SIZE = 5;
 
@@ -36,27 +37,27 @@ export default function KpisListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-black text-ink">KPIs</h1>
-          <p className="text-slate-500">Track measurable indicators and recent entries.</p>
+          <h1 className="text-3xl font-black text-ink">Insights</h1>
+          <p className="text-slate-500">Track measurable insights and recent entries.</p>
         </div>
-        <Link to="/kpis/new">
-          <Button>New KPI</Button>
+        <Link to="/insights/new">
+          <Button>New insight</Button>
         </Link>
       </div>
 
       <div className="card-surface p-4">
         <Input
-          label="Search KPIs"
+          label="Search insights"
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
             setPage(1);
           }}
-          placeholder="Filter by KPI name or description"
+          placeholder="Filter by insight name or description"
         />
       </div>
 
-      {loading ? <LoadingSpinner label="Loading KPIs..." /> : null}
+      {loading ? <LoadingSpinner label="Loading insights..." /> : null}
       <ErrorAlert message={error} />
       {!loading ? (
         <Table
@@ -65,13 +66,17 @@ export default function KpisListPage() {
               key: "name",
               label: "Name",
               render: (row) => (
-                <Link className="font-semibold text-ink" to={`/kpis/${row.id}`}>
+                <Link className="font-semibold text-ink" to={`/insights/${row.id}`}>
                   {row.name}
                 </Link>
               )
             },
             { key: "description", label: "Description" },
-            { key: "frequency", label: "Frequency" },
+            {
+              key: "frequency",
+              label: "Frequency",
+              render: (row) => humanizeEnum(row.frequency)
+            },
             { key: "unit", label: "Unit" }
           ]}
           rows={pagedKpis}

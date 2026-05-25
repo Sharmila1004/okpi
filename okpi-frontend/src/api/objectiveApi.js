@@ -36,6 +36,17 @@ export async function getObjective(objectiveId) {
   return normalizeObjective(objective);
 }
 
+export async function getObjectiveDashboard(ownerId) {
+  const searchParams = new URLSearchParams();
+  if (ownerId !== undefined && ownerId !== null) {
+    searchParams.set("ownerId", String(ownerId));
+  }
+
+  const suffix = searchParams.toString() ? `?${searchParams}` : "";
+  const response = await axiosInstance.get(`/api/v1/objectives/dashboard${suffix}`);
+  return response.data;
+}
+
 export async function createObjective(payload) {
   const response = await axiosInstance.post("/api/v1/objectives", payload);
   return response.data;
@@ -65,6 +76,21 @@ export async function createKeyResult(objectiveId, payload) {
   const response = await axiosInstance.post(
     `/api/v1/objectives/${objectiveId}/key-results`,
     payload
+  );
+  return response.data;
+}
+
+export async function updateKeyResult(objectiveId, keyResultId, payload) {
+  const response = await axiosInstance.put(
+    `/api/v1/objectives/${objectiveId}/key-results/${keyResultId}`,
+    payload
+  );
+  return response.data;
+}
+
+export async function deleteKeyResult(objectiveId, keyResultId) {
+  const response = await axiosInstance.delete(
+    `/api/v1/objectives/${objectiveId}/key-results/${keyResultId}`
   );
   return response.data;
 }

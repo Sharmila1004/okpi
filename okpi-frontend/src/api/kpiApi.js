@@ -34,3 +34,8 @@ export async function recordEntry(kpiId, payload) {
   const response = await axiosInstance.post(`/api/v1/kpis/${kpiId}/entries`, payload);
   return response.data;
 }
+
+export async function deleteEntry(kpiId, entryId) {
+  const response = await axiosInstance.delete(`/api/v1/kpis/${kpiId}/entries/${entryId}`);
+  return response.data;
+}

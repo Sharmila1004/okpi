@@ -14,7 +14,10 @@ public class CorsConfig {
     public CorsWebFilter corsWebFilter() {
 
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOriginPattern("http://localhost:*");
+        config.addAllowedOriginPattern("http://127.0.0.1:*");
+        config.addAllowedOriginPattern("http://192.168.*:*");
+        config.addAllowedOriginPattern("http://10.*:*");
         config.addAllowedHeader("*");
 
         config.addAllowedMethod(HttpMethod.GET);
