@@ -15,18 +15,16 @@ function mapUserToForm(user) {
   return {
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
-    email: user?.email ?? ""
+    email: user?.email ?? "",
   };
 }
 
 export default function ProfilePage() {
   const { setUser, user } = useAuth();
   const [profile, setProfile] = useState(null);
-
   const role = normalizeRole(profile?.role ?? user?.role);
   const isAdmin = role === ROLES.ADMIN;
   const canEditProfile = isAdmin;
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,7 +33,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       setLoading(true);
       setError("");
@@ -55,7 +52,6 @@ export default function ProfilePage() {
         }
       }
     }
-
     load();
     return () => {
       cancelled = true;
@@ -71,44 +67,31 @@ export default function ProfilePage() {
     event.preventDefault();
     setError("");
     setSuccess("");
-
     const firstName = form.firstName.trim();
     const lastName = form.lastName.trim();
     const email = form.email.trim();
-
     if (!canEditProfile) {
       setError("Only admins can update profile details.");
       return;
     }
-
     if (!firstName || !lastName) {
       setError("First and last name are required.");
       return;
     }
-
     if (email && !isValidEmail(email)) {
       setError("Enter a valid email address.");
       return;
     }
-
     setSaving(true);
     try {
-      const updated = await authApi.updateCurrentUser({
-        firstName,
-        lastName,
-        email
-      });
-
+      const updated = await authApi.updateCurrentUser({ firstName, lastName, email });
       setProfile(updated);
       setForm(mapUserToForm(updated));
-
       const name = [updated.firstName, updated.lastName]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-
+          .filter(Boolean)
+          .join(" ")
+          .trim();
       const nextRole = normalizeRole(updated.role) ?? ROLES.MEMBER;
-
       setUser((current) => ({
         ...(current ?? {}),
         id: updated.id,
@@ -117,9 +100,8 @@ export default function ProfilePage() {
         lastName: updated.lastName ?? "",
         name: name || updated.email || "Authenticated User",
         role: nextRole,
-        active: updated.active ?? true
+        active: updated.active ?? true,
       }));
-
       setSuccess("Profile updated.");
     } catch (submitError) {
       setError(getApiErrorMessage(submitError, "Update failed."));
@@ -133,66 +115,53 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-          Account
-        </p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-ink">Your profile</h1>
-        <p className="mt-2 text-slate-600">
-          Name and email are stored in OKPI Auth and used across objectives and insights.
-        </p>
-      </div>
-
-      <form className="card-surface space-y-5 p-6" onSubmit={handleSubmit}>
-        <ErrorAlert message={error} />
-
-        {success && (
-          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-800">
-            {success}
+      <div className="mx-auto max-w-2xl space-y-8">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+            Account
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-ink">Your profile</h1>
+        </div>
+        <form className="card-surface space-y-5 p-6" onSubmit={handleSubmit}>
+          <ErrorAlert message={error} />
+          {success && (
+              <div className="rounded-[20px] border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-800">
+                {success}
+              </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+                label="First name"
+                name="firstName"
+                value={form.firstName}
+                onChange={handleChange}
+                disabled={!canEditProfile}
+                required
+            />
+            <Input
+                label="Last name"
+                name="lastName"
+                value={form.lastName}
+                onChange={handleChange}
+                disabled={!canEditProfile}
+                required
+            />
           </div>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-2">
           <Input
-            label="First name"
-            name="firstName"
-            value={form.firstName}
-            onChange={handleChange}
-            disabled={!canEditProfile}
-            required
+              label="Email"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              disabled={!canEditProfile}
           />
-          <Input
-            label="Last name"
-            name="lastName"
-            value={form.lastName}
-            onChange={handleChange}
-            disabled={!canEditProfile}
-            required
-          />
-        </div>
-
-        <Input
-          label="Email"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          disabled={!canEditProfile}
-        />
-
-        <p className="text-xs text-slate-500">Only admins can edit profile details.</p>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button type="submit" disabled={saving || !canEditProfile}>
-            {saving ? "Saving..." : "Save changes"}
-          </Button>
-
-          <Link to="/" className="text-sm font-semibold text-ink">
-            Back to dashboard
-          </Link>
-        </div>
-      </form>
-    </div>
+          <p className="text-xs text-slate-500">Only admins can edit profile details.</p>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <Button type="submit" disabled={saving || !canEditProfile}>
+              {saving ? "Saving..." : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      </div>
   );
 }
