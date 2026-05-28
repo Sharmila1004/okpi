@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { PencilLine, Save, Trash2 } from "lucide-react";
-import { changeUserRole, deleteUser, getUsers, updateUserByAdmin } from "../../api/authApi";
+import { PencilLine, Save, Trash2, Users } from "lucide-react";
+import { changeUserRole, deleteUser, getUsers, updateUserByAdmin, assignManagerTeam } from "../../api/authApi";
 import Button from "../../components/common/Button";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import Input from "../../components/common/Input";
@@ -56,6 +56,11 @@ export default function UsersManagementPage() {
   const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
   const [editError, setEditError] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [managingTeamFor, setManagingTeamFor] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamError, setTeamError] = useState("");
+  const [teamSaving, setTeamSaving] = useState(false);
 
   const usersState = useFetch(
     () =>
@@ -146,6 +151,69 @@ export default function UsersManagementPage() {
     }
   }
 
+  function openManageTeamModal(manager) {
+    setManagingTeamFor(manager);
+    setTeamError("");
+    setTeamMembers([]);
+    setTeamLoading(true);
+
+    // load members list
+    getUsers({ page: 0, size: 1000, role: "MEMBER" })
+      .then((resp) => {
+        // mark checked if managerId matches
+        const members = (resp.content ?? []).map((m) => ({
+          ...m,
+          selected: String(m.managerId ?? m.manager?.id ?? "") === String(manager.id)
+        }));
+        setTeamMembers(members);
+      })
+      .catch((err) => setTeamError(getApiErrorMessage(err, "Failed to load members.")))
+      .finally(() => setTeamLoading(false));
+  }
+
+  function closeManageTeamModal() {
+    setManagingTeamFor(null);
+    setTeamMembers([]);
+    setTeamError("");
+    setTeamLoading(false);
+    setTeamSaving(false);
+  }
+
+  function toggleMemberSelection(memberId) {
+    setTeamMembers((current) =>
+      current.map((m) => (String(m.id) === String(memberId) ? { ...m, selected: !m.selected } : m))
+    );
+  }
+
+  async function saveTeamAssignments() {
+    if (!managingTeamFor) return;
+    setTeamSaving(true);
+    setTeamError("");
+    const selectedIds = teamMembers.filter((m) => m.selected).map((m) => m.id);
+
+    try {
+      // Prefer bulk assign API if available
+      await assignManagerTeam(managingTeamFor.id, selectedIds);
+      setReloadKey((c) => c + 1);
+      closeManageTeamModal();
+    } catch (err) {
+      // Fallback: try updating users individually
+      try {
+        await Promise.all(
+          teamMembers.map((m) =>
+            updateUserByAdmin(m.id, { managerId: m.selected ? managingTeamFor.id : null })
+          )
+        );
+        setReloadKey((c) => c + 1);
+        closeManageTeamModal();
+      } catch (err2) {
+        setTeamError(getApiErrorMessage(err2, "Failed to save team assignments."));
+      }
+    } finally {
+      setTeamSaving(false);
+    }
+  }
+
   async function handleDeleteUser(user) {
     setActionError("");
 
@@ -170,16 +238,16 @@ export default function UsersManagementPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-ink">Users</h1>
+        <h1 className="text-3xl font-black text-ink">People</h1>
         <p className="text-slate-500">
-          Manage access for members, managers, and administrators.
+          Manage access and teams.
         </p>
       </div>
 
       <div className="card-surface flex flex-col gap-4 p-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-ink">Role filter</span>
+            <span className="text-sm font-medium text-ink">Role</span>
             <select
               value={roleFilter}
               onChange={(event) => {
@@ -188,7 +256,7 @@ export default function UsersManagementPage() {
               }}
               className="control-surface md:w-56"
             >
-              <option value="all">All roles</option>
+              <option value="all">All</option>
               <option value="ADMIN">Admin</option>
               <option value="MANAGER">Manager</option>
               <option value="MEMBER">Member</option>
@@ -250,8 +318,19 @@ export default function UsersManagementPage() {
                     onClick={() => openEditModal(row)}
                   >
                     <PencilLine className="h-4 w-4" />
-                    Edit details
+                    Edit
                   </Button>
+                  {row.role === "MANAGER" ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="whitespace-nowrap"
+                      onClick={() => openManageTeamModal(row)}
+                    >
+                      <Users className="h-4 w-4" />
+                      Manage team
+                    </Button>
+                  ) : null}
                   <Button
                     variant="danger"
                     size="sm"
@@ -259,13 +338,12 @@ export default function UsersManagementPage() {
                     onClick={() => handleDeleteUser(row)}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete
+                    Remove
                   </Button>
                 </div>
               )
             }
-          ]}
-          rows={usersPage.content}
+          ]}          rows={usersPage.content}
           emptyMessage="No users found for the selected filter."
         />
       ) : null}
@@ -275,7 +353,7 @@ export default function UsersManagementPage() {
         totalPages={usersPage.totalPages || 1}
         onPageChange={setPage}
       />
-      <Modal title="Edit user details" open={Boolean(editingUser)} onClose={closeEditModal}>
+      <Modal title="Edit profile" open={Boolean(editingUser)} onClose={closeEditModal}>
         <form className="space-y-4" onSubmit={handleEditSubmit}>
           <ErrorAlert message={editError} />
 
@@ -329,10 +407,40 @@ export default function UsersManagementPage() {
             </Button>
             <Button type="submit" className="whitespace-nowrap" disabled={savingEdit}>
               <Save className="h-4 w-4" />
-              {savingEdit ? "Saving..." : "Save changes"}
+              {savingEdit ? "Saving..." : "Save"}
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal title={
+        managingTeamFor ? `Team for ${[managingTeamFor.firstName, managingTeamFor.lastName].filter(Boolean).join(" ")}` : "Team"
+      } open={Boolean(managingTeamFor)} onClose={closeManageTeamModal}>
+        <div className="space-y-4">
+          <ErrorAlert message={teamError} />
+          {teamLoading ? (
+            <LoadingSpinner label="Loading members..." />
+          ) : (
+            <div className="grid gap-2 max-h-72 overflow-auto">
+              {teamMembers.map((m) => (
+                <label key={m.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <input type="checkbox" checked={!!m.selected} onChange={() => toggleMemberSelection(m.id)} className="h-4 w-4 rounded border-slate-300" />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-ink">{[m.firstName, m.lastName].filter(Boolean).join(" ") || m.email}</div>
+                    <div className="text-xs text-slate-500">{m.email}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="secondary" type="button" onClick={closeManageTeamModal} disabled={teamSaving}>Cancel</Button>
+            <Button type="button" onClick={saveTeamAssignments} disabled={teamSaving}>
+            {teamSaving ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

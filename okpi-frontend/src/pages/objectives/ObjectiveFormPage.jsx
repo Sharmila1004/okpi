@@ -63,6 +63,7 @@ export default function ObjectiveFormPage() {
   const [formData, setFormData] = useState(() => createInitialForm());
   const [users, setUsers] = useState([]);
   const [usersError, setUsersError] = useState(false);
+  const [usersErrorMessage, setUsersErrorMessage] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -73,9 +74,10 @@ export default function ObjectiveFormPage() {
         const response = await getUsers({ page: 0, size: 1000 });
         setUsers(response.content ?? []);
         setUsersError(false);
+        setUsersErrorMessage("");
       } catch (loadError) {
         setUsersError(true);
-        setError(loadError.response?.data?.message ?? "Failed to load users.");
+        setUsersErrorMessage(loadError.response?.data?.message ?? "Failed to load users.");
       } finally {
         setLoadingUsers(false);
       }
@@ -127,11 +129,11 @@ export default function ObjectiveFormPage() {
   }
 
   const selectedAssigneeNames = users
-    .filter((user) => formData.assigneeIds.includes(String(user.id)))
-    .map((user) => {
-      const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-      return name || user.email;
-    });
+      .filter((user) => formData.assigneeIds.includes(String(user.id)))
+      .map((user) => {
+        const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+        return name || user.email;
+      });
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -168,10 +170,10 @@ export default function ObjectiveFormPage() {
   return (
       <div className="card-surface max-w-3xl p-6">
         <h1 className="text-3xl font-black text-ink">
-          {isEditMode ? "Edit objective" : "Create objective"}
+          {isEditMode ? "Edit goal" : "New goal"}
         </h1>
         <p className="mt-2 text-slate-500">
-          Use a single shared form for create and edit flows.
+          Create or edit goals.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -182,7 +184,7 @@ export default function ObjectiveFormPage() {
               value={formData.title}
               onChange={handleChange}
               required
-              placeholder="Improve onboarding conversion"
+              placeholder="eg. Improve onboarding conversion"
           />
           <label className="block space-y-2">
             <span className="text-sm font-medium text-ink">Description</span>
@@ -192,7 +194,7 @@ export default function ObjectiveFormPage() {
                 onChange={handleChange}
                 rows={4}
                 className="control-surface min-h-[120px] resize-y"
-                placeholder="Explain the strategic intent and expected business impact."
+                placeholder="Brief intent and impact."
             />
           </label>
           <div className="grid gap-4 md:grid-cols-2">
@@ -233,11 +235,12 @@ export default function ObjectiveFormPage() {
           ) : null}
           <section className="space-y-3 rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
             <div>
-              <h2 className="text-sm font-semibold text-ink">Assignees</h2>
+              <h2 className="text-sm font-semibold text-ink">People</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Assigned members can view this objective and update key result progress.
+                People who can update progress.
               </p>
             </div>
+            {usersError ? <ErrorAlert message={usersErrorMessage || "Failed to load users."} /> : null}
             {loadingUsers ? <LoadingSpinner label="Loading users..." /> : null}
             {!loadingUsers && !usersError ? (
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -274,12 +277,12 @@ export default function ObjectiveFormPage() {
             ) : null}
             {!loadingUsers && !usersError ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
-                  Assigned to: {summarizeNames(selectedAssigneeNames, 4, "No assignees selected")}
+                  Assigned: {summarizeNames(selectedAssigneeNames, 4, "No assignees selected")}
                 </div>
             ) : null}
           </section>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Saving..." : "Save objective"}
+            {submitting ? "Saving..." : "Save goal"}
           </Button>
         </form>
       </div>

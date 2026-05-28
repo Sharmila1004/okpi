@@ -99,3 +99,12 @@ export async function changeUserStatus(userId, isActive) {
   });
   return response.data;
 }
+
+// Assign a list of members to a manager. Backend may implement this route.
+export async function assignManagerTeam(managerId, memberIds = []) {
+  const response = await axiosInstance.put(
+    `/api/v1/auth/managers/${managerId}/team`,
+    { memberIds }
+  );
+  return response.data;
+}

@@ -72,7 +72,7 @@ export default function RegisterPage() {
       description="Set up your workspace to manage objectives, insights, and team execution in one place."
       stats={[
         { value: "3", label: "Teams", icon: Target },
-        { value: "18", label: "Objectives", icon: BarChart3 },
+        { value: "18", label: "Goals", icon: BarChart3 },
         { value: "96%", label: "Visibility", icon: ShieldCheck }
       ]}
     >

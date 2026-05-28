@@ -49,7 +49,7 @@ export default function LoginPage() {
       title={"Track your goals.\nMeasure progress."}
       description="Professional objective and insight tracking designed for teams that want execution visible."
       stats={[
-        { value: "24", label: "Objectives", icon: Target },
+      { value: "24", label: "Goals", icon: Target },
         { value: "78%", label: "Progress", icon: BarChart3 },
         { value: "12", label: "Insights", icon: ShieldCheck }
       ]}

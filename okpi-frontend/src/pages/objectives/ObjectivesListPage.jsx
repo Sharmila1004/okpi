@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { getObjectives } from "../../api/objectiveApi";
 import Button from "../../components/common/Button";
 import ErrorAlert from "../../components/common/ErrorAlert";
@@ -34,18 +34,36 @@ export default function ObjectivesListPage() {
     return () => window.removeEventListener("okpi:objective-updated", handler);
   }, [setData]);
 
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const filterParam = query.get("filter");
+
   const filteredObjectives = useMemo(() => {
     const objectives = data ?? [];
-    if (!debouncedSearch) {
-      return objectives;
+
+    let result = objectives;
+
+    if (debouncedSearch) {
+      result = result.filter((objective) =>
+        `${objective.title} ${objective.description}`
+          .toLowerCase()
+          .includes(debouncedSearch.toLowerCase())
+      );
     }
 
-    return objectives.filter((objective) =>
-      `${objective.title} ${objective.description}`
-        .toLowerCase()
-        .includes(debouncedSearch.toLowerCase())
-    );
-  }, [data, debouncedSearch]);
+    // Apply optional dashboard-driven filter
+    if (filterParam === "on_track") {
+      result = result.filter(
+        (objective) => objective.status === "ON_TRACK" || objective.status === "COMPLETED"
+      );
+    } else if (filterParam === "attention") {
+      result = result.filter(
+        (objective) => objective.status === "AT_RISK" || objective.status === "OFF_TRACK"
+      );
+    }
+
+    return result;
+  }, [data, debouncedSearch, filterParam]);
 
   const totalPages = Math.max(1, Math.ceil(filteredObjectives.length / PAGE_SIZE));
   const pagedObjectives = filteredObjectives.slice(
@@ -57,12 +75,12 @@ export default function ObjectivesListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-black text-ink">Objectives</h1>
-          <p className="text-slate-500">Create, inspect, and refine strategic goals.</p>
+          <h1 className="text-3xl font-black text-ink">Goals</h1>
+          <p className="text-slate-500">Create, inspect, refine goals.</p>
         </div>
         {canCreateObjectives ? (
           <Link to="/objectives/new">
-            <Button>New objective</Button>
+            <Button>New goal</Button>
           </Link>
         ) : (
           <p className="text-sm text-slate-500">
@@ -73,7 +91,7 @@ export default function ObjectivesListPage() {
 
       <div className="card-surface p-4">
         <Input
-          label="Search objectives"
+          label="Search goals"
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
@@ -90,13 +108,14 @@ export default function ObjectivesListPage() {
           columns={[
             {
               key: "title",
-              label: "Objective",
+              label: "Goal",
               render: (row) => (
                 <Link className="font-semibold text-ink" to={`/objectives/${row.id}`}>
                   {row.title}
                 </Link>
               )
             },
+
             { key: "description", label: "Description" },
             {
               key: "status",

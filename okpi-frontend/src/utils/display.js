@@ -63,7 +63,7 @@ export function getInsightLabel(count = 1) {
 }
 
 export function getObjectiveLabel(count = 1) {
-  return count === 1 ? "Objective" : "Objectives";
+  return count === 1 ? "Goal" : "Goals";
 }
 
 export function formatUserStatus(isActive) {

@@ -3,6 +3,7 @@ package com.laerdal.okpi.auth.config;
 import com.laerdal.okpi.auth.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -47,18 +48,19 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Managers and admins can resolve user names for dashboard grouping
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/auth/users/summary")
+                        .requestMatchers("/api/v1/auth/users/summary")
                         .hasAnyRole("ADMIN", "MANAGER")
 
-                        // ONLY ADMIN can LIST users and view user details
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/auth/users/**")
+                        .requestMatchers("/api/v1/auth/users")
+                        .hasAnyRole("ADMIN", "MANAGER")
+
+                        .requestMatchers("/api/v1/auth/users/**")
                         .hasRole("ADMIN")
 
-                        // ONLY ADMIN can modify users (role/status changes, deletions, and profile edits)
-                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/auth/users/**")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/auth/users/**")
                         .hasRole("ADMIN")
-                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/auth/users/**")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/users/**")
                         .hasRole("ADMIN")
 
                         .anyRequest().authenticated()

@@ -86,7 +86,7 @@ export default function ProfilePage() {
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (email && !isValidEmail(email)) {
       setError("Enter a valid email address.");
       return;
     }
@@ -155,7 +155,7 @@ export default function ProfilePage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
-            label="First name *"
+            label="First name"
             name="firstName"
             value={form.firstName}
             onChange={handleChange}
@@ -163,7 +163,7 @@ export default function ProfilePage() {
             required
           />
           <Input
-            label="Last name *"
+            label="Last name"
             name="lastName"
             value={form.lastName}
             onChange={handleChange}
@@ -173,28 +173,15 @@ export default function ProfilePage() {
         </div>
 
         <Input
-          label="Email *"
+          label="Email"
           name="email"
           type="email"
           value={form.email}
           onChange={handleChange}
           disabled={!canEditProfile}
-          required
         />
 
-        <p className="text-xs text-slate-500">
-          {isAdmin ? (
-            <>
-              Manage users from{" "}
-              <Link to="/admin/users" className="font-semibold text-ink underline">
-                Users
-              </Link>
-              .
-            </>
-          ) : (
-            "Only admins can edit profile details."
-          )}
-        </p>
+        <p className="text-xs text-slate-500">Only admins can edit profile details.</p>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button type="submit" disabled={saving || !canEditProfile}>

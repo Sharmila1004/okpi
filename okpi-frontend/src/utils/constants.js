@@ -44,6 +44,6 @@ export const STATUS_COLORS = {
 
 export const NAV_ITEMS = [
   { label: "Dashboard", to: "/" },
-  { label: "Objectives", to: "/objectives" },
+  { label: "Goals", to: "/objectives" },
   { label: "Insights", to: "/insights" }
 ];

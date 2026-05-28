@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg: #f6f7f9; /* neutral background */
+  --surface: #ffffff;
+  --text: #0f1724;
+  --muted: #6b7280;
+  --accent: #111827; /* charcoal */
+  --accent-600: #0b1320;
+  --card-radius: 8px;
+  --control-radius: 8px;
+  --shadow-1: 0 6px 18px rgba(15,23,42,0.04);
+}
+
+/* utility classes for existing tailwind-like names used in templates */
+.text-ink { color: var(--accent) !important; }
+.bg-ink { background-color: var(--accent) !important; color: white !important; }
+.bg-ink\/5 { background-color: rgba(17,24,39,0.05) !important; }
+.bg-ink\/10 { background-color: rgba(17,24,39,0.10) !important; }
+
+/* subtle focus using charcoal */
+:focus { outline: 3px solid rgba(17,24,39,0.08); outline-offset: 2px; }
+
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* Utility helpers to keep UI compact and tidy */
+.small-text { font-size: 13px; }
+.muted { color: var(--muted); }
+
+/* Compact controls */
+.control-surface { border-radius: var(--control-radius); padding: 8px 10px; }
+.card-surface { border-radius: var(--card-radius); }
+
+/* Compact headings */
+.compact-heading { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.compact-sub { font-size: 0.95rem; color: var(--muted); }
+
+/* Buttons fallback styles for non-Tailwind elements */
+.btn-accent { background: var(--accent); color: white; border-radius: 8px; padding: 6px 10px; }
+
+/* Minimal focus outline for accessibility */
+:focus { outline: 3px solid rgba(79,70,229,0.10); outline-offset: 2px; }

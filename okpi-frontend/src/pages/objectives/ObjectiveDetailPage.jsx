@@ -259,7 +259,7 @@ export default function ObjectiveDetailPage() {
   }
 
   if (objectiveState.loading || keyResultsState.loading) {
-    return <LoadingSpinner label="Loading objective..." />;
+    return <LoadingSpinner label="Loading goal..." />;
   }
 
   if (objectiveState.error || keyResultsState.error) {
@@ -267,7 +267,7 @@ export default function ObjectiveDetailPage() {
   }
 
   if (!objective) {
-    return <ErrorAlert message="Objective not found." />;
+    return <ErrorAlert message="Goal not found." />;
   }
 
   return (
@@ -289,10 +289,10 @@ export default function ObjectiveDetailPage() {
         {canManageObjectives ? (
           <div className="flex flex-wrap gap-3">
             <Link to={`/objectives/${objectiveId}/edit`}>
-              <Button variant="secondary">Edit objective</Button>
+              <Button variant="secondary">Edit</Button>
             </Link>
             <Button variant="danger" onClick={handleDeleteObjective}>
-              Delete objective
+              Delete
             </Button>
           </div>
         ) : null}
@@ -391,7 +391,7 @@ export default function ObjectiveDetailPage() {
                 : null
             ].filter(Boolean)}
             rows={keyResults}
-            emptyMessage="No key results defined for this objective."
+            emptyMessage="No key results for this goal."
           />
         </div>
       </section>
