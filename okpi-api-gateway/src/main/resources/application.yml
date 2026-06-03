@@ -7,33 +7,44 @@ spring:
 
   cloud:
     gateway:
-
       discovery:
         locator:
           enabled: false
           lower-case-service-id: true
 
       routes:
-
         - id: auth-service
           uri: http://auth-service:8081
           predicates:
             - Path=/api/v1/auth/**
+          filters:
+            - PreserveHostHeader
+
+        - id: notifications-service
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/v1/notifications,/api/v1/notifications/**
+          filters:
+            - PreserveHostHeader
 
         - id: objective-service
           uri: http://objective-service:8082
           predicates:
             - Path=/api/v1/objectives/**
+          filters:
+            - PreserveHostHeader
 
         - id: kpi-service
           uri: http://kpi-service:8083
           predicates:
-            - Path=/api/v1/kpis/**
+            - Path=/api/v1/kpis,/api/v1/kpis/**
+          filters:
+            - PreserveHostHeader
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/,http://localhost:8762/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
     register-with-eureka: ${EUREKA_CLIENT_REGISTER_WITH_EUREKA:true}
     fetch-registry: ${EUREKA_CLIENT_FETCH_REGISTRY:true}
 

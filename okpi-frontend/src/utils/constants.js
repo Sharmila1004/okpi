@@ -7,7 +7,8 @@ function resolveApiBaseUrl() {
   if (import.meta.env.DEV) {
     return "";
   }
-  return "http://localhost:18080";
+  // When running in Docker/docker-compose, API gateway listens on 8080
+  return "http://localhost:8080";
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

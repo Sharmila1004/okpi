@@ -141,6 +141,20 @@ services:
     ports:
       - "18080:8080"
 
+  frontend:
+    build:
+      context: .
+      dockerfile: okpi-frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:18080
+    container_name: okpi-frontend
+    restart: unless-stopped
+    depends_on:
+      api-gateway:
+        condition: service_started
+    ports:
+      - "5173:80"
+
 volumes:
   mysql-auth-data:
   mysql-objective-data:

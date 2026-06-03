@@ -1,6 +1,7 @@
 package com.laerdal.okpi.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.laerdal.okpi.auth.dto.request.AssignTeamRequest;
 import com.laerdal.okpi.auth.dto.request.ChangeRoleRequest;
 import com.laerdal.okpi.auth.dto.request.ChangeStatusRequest;
 import com.laerdal.okpi.auth.dto.request.UpdateProfileRequest;
@@ -26,7 +27,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -166,6 +166,19 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.role").value("MANAGER"));
 
         verify(userService).updateUserByAdmin(eq(7L), eq(request));
+    }
+
+    @Test
+    void assignManagerTeamReturnsNoContent() throws Exception {
+        AssignTeamRequest request = new AssignTeamRequest();
+        request.setMemberIds(List.of(10L, 11L));
+
+        mockMvc.perform(put("/api/v1/auth/managers/7/team")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(userService).assignManagerTeam(7L, List.of(10L, 11L));
     }
 
     private static PagedResponse<UserResponse> pagedUsers() {

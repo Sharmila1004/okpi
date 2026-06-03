@@ -18,6 +18,7 @@ public class UserMapper {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getRole())
+                .managerId(user.getManagerId())
                 .active(user.isActive())
                 .createdAt(user.getCreatedAt())
                 .build();

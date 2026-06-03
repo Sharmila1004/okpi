@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getUsers, assignManagerTeam, updateUserByAdmin } from "../../api/authApi";
+import { useLocation } from "react-router-dom";
+import { getUsers, assignManagerTeam } from "../../api/authApi";
 import Button from "../../components/common/Button";
 import ErrorAlert from "../../components/common/ErrorAlert";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -12,6 +13,8 @@ function getFullName(user) {
 }
 
 export default function ManageTeamsPage() {
+    const location = useLocation();
+    const preselectedManagerId = new URLSearchParams(location.search).get("manager");
     const [managers, setManagers] = useState([]);
     const [allMembers, setAllMembers] = useState([]);
     const [loadingManagers, setLoadingManagers] = useState(true);
@@ -27,6 +30,17 @@ export default function ManageTeamsPage() {
             .catch((err) => setError(getApiErrorMessage(err, "Failed to load managers.")))
             .finally(() => setLoadingManagers(false));
     }, []);
+
+    useEffect(() => {
+        if (!preselectedManagerId || !managers.length) {
+            return;
+        }
+
+        const matched = managers.find((manager) => String(manager.id) === String(preselectedManagerId));
+        if (matched) {
+            setSelectedManager(matched);
+        }
+    }, [managers, preselectedManagerId]);
 
     useEffect(() => {
         setLoadingMembers(true);
@@ -63,19 +77,9 @@ export default function ManageTeamsPage() {
                         : m
                 )
             );
+            window.dispatchEvent(new Event("okpi:teams-updated"));
         } catch (err) {
-            try {
-                await updateUserByAdmin(member.id, { managerId: selectedManager.id });
-                setAllMembers((prev) =>
-                    prev.map((m) =>
-                        String(m.id) === String(member.id)
-                            ? { ...m, managerId: selectedManager.id }
-                            : m
-                    )
-                );
-            } catch (err2) {
-                setError(getApiErrorMessage(err2, "Failed to assign member."));
-            }
+            setError(getApiErrorMessage(err, "Failed to assign member."));
         } finally {
             setSaving(false);
         }
@@ -94,17 +98,9 @@ export default function ManageTeamsPage() {
                     String(m.id) === String(member.id) ? { ...m, managerId: null } : m
                 )
             );
+            window.dispatchEvent(new Event("okpi:teams-updated"));
         } catch (err) {
-            try {
-                await updateUserByAdmin(member.id, { managerId: null });
-                setAllMembers((prev) =>
-                    prev.map((m) =>
-                        String(m.id) === String(member.id) ? { ...m, managerId: null } : m
-                    )
-                );
-            } catch (err2) {
-                setError(getApiErrorMessage(err2, "Failed to unassign member."));
-            }
+            setError(getApiErrorMessage(err, "Failed to unassign member."));
         } finally {
             setSaving(false);
         }

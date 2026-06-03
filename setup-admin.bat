@@ -11,7 +11,7 @@ echo ======================================
 echo.
 
 REM Configuration
-if not defined API_URL set "API_URL=http://localhost:8080"
+if not defined API_URL set "API_URL=http://localhost:18080"
 if not defined ADMIN_EMAIL set "ADMIN_EMAIL=admin@okpi.local"
 if not defined ADMIN_FIRST_NAME set "ADMIN_FIRST_NAME=System"
 if not defined ADMIN_LAST_NAME set "ADMIN_LAST_NAME=Administrator"
@@ -119,7 +119,7 @@ echo   Email: %ADMIN_EMAIL%
 echo   Password: (the password you entered^)
 echo.
 echo Next steps:
-echo 1. Open the application at: http://localhost:3000
+echo 1. Open the application at: http://localhost:5173
 echo 2. Login with the above credentials
 echo 3. Create more users through the admin interface
 echo.

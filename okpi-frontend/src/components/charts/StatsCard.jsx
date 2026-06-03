@@ -24,7 +24,7 @@ export default function StatsCard({
   };
 
   return (
-    <div className="card-surface flex h-full flex-col justify-between p-5">
+    <div className="card-surface flex h-full flex-col justify-between p-5 transition-all duration-200 group-hover:border-[#2f67ff]/20 group-hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
       <div className="flex items-start justify-between gap-3">
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accentStyles[accentTone]}`}>
           {Icon ? <Icon className="h-6 w-6" /> : null}

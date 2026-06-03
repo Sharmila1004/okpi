@@ -305,7 +305,7 @@ export default function ObjectiveDetailPage() {
           <div>
             <h2 className="text-lg font-semibold text-ink">Key results</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Define the measurable outcomes that make this objective real.
+              Track performance against targets
             </p>
           </div>
           {canManageObjectives ? (

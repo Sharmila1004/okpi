@@ -2,6 +2,7 @@ package com.laerdal.okpi.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laerdal.okpi.auth.config.SecurityConfig;
+import com.laerdal.okpi.auth.dto.request.AssignTeamRequest;
 import com.laerdal.okpi.auth.dto.request.UpdateProfileRequest;
 import com.laerdal.okpi.auth.dto.response.PagedResponse;
 import com.laerdal.okpi.auth.dto.response.UserResponse;
@@ -116,6 +117,32 @@ class UserControllerSecurityTest {
     void deleteUserIsForbiddenForNonAdmins() throws Exception {
         mockMvc.perform(delete("/api/v1/auth/users/7"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "MEMBER")
+    void assignManagerTeamIsForbiddenForNonAdmins() throws Exception {
+        AssignTeamRequest request = new AssignTeamRequest();
+        request.setMemberIds(List.of(1L, 2L));
+
+        mockMvc.perform(put("/api/v1/auth/managers/7/team")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void assignManagerTeamIsAllowedForAdmins() throws Exception {
+        AssignTeamRequest request = new AssignTeamRequest();
+        request.setMemberIds(List.of(1L, 2L));
+
+        mockMvc.perform(put("/api/v1/auth/managers/7/team")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(userService).assignManagerTeam(7L, List.of(1L, 2L));
     }
 
     private static PagedResponse<UserResponse> emptyUsersPage() {

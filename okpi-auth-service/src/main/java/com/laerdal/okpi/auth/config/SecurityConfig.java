@@ -14,59 +14,40 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
+import org.springframework.security.web.util.matcher.AndRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final String internalToken;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          @Value("${services.internal.token:okpi-internal-token}") String internalToken) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.internalToken = internalToken;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.disable())
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/",
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/refresh",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-
-                        .requestMatchers("/api/v1/auth/users/summary")
-                        .hasAnyRole("ADMIN", "MANAGER")
-
-                        .requestMatchers("/api/v1/auth/users")
-                        .hasAnyRole("ADMIN", "MANAGER")
-
-                        .requestMatchers("/api/v1/auth/users/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/auth/users/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/users/**")
-                        .hasRole("ADMIN")
-
+                        .requestMatchers("/", "/api/v1/auth/register", "/api/v1/auth/login",
+                                "/api/v1/auth/refresh", "/api/v1/auth/logout",
+                                "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(internalNotificationMatcher()).permitAll()
+                        .requestMatchers(internalUsersSummaryMatcher()).permitAll()
+                        .requestMatchers(internalUsersListMatcher()).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -76,27 +57,28 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(
-                Arrays.asList("http://localhost:*", "http://127.0.0.1:*")
+    private AndRequestMatcher internalNotificationMatcher() {
+        return new AndRequestMatcher(
+                new AntPathRequestMatcher("/api/v1/notifications", HttpMethod.POST.name()),
+                new RequestHeaderRequestMatcher("X-OKPI-Internal-Token", internalToken)
         );
-        config.setAllowCredentials(true);
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("GET");
-        config.addAllowedMethod("POST");
-        config.addAllowedMethod("PUT");
-        config.addAllowedMethod("DELETE");
-        config.addAllowedMethod("OPTIONS");
+    }
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
+    private AndRequestMatcher internalUsersSummaryMatcher() {
+        return new AndRequestMatcher(
+                new AntPathRequestMatcher("/api/v1/auth/users/summary", HttpMethod.GET.name()),
+                new RequestHeaderRequestMatcher("X-OKPI-Internal-Token", internalToken)
+        );
+    }
+
+    private AndRequestMatcher internalUsersListMatcher() {
+        return new AndRequestMatcher(
+                new AntPathRequestMatcher("/api/v1/auth/users", HttpMethod.GET.name()),
+                new RequestHeaderRequestMatcher("X-OKPI-Internal-Token", internalToken)
+        );
     }
 }

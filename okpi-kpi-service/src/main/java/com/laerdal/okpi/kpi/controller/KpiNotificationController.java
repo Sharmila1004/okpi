@@ -9,13 +9,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
-public class NotificationController {
+public class KpiNotificationController {
 
     private final NotificationRepository notificationRepository;
     private final RequestContext requestContext;
 
-    public NotificationController(NotificationRepository notificationRepository,
-                                  RequestContext requestContext) {
+    public KpiNotificationController(NotificationRepository notificationRepository,
+                                     RequestContext requestContext) {
         this.notificationRepository = notificationRepository;
         this.requestContext = requestContext;
     }

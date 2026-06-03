@@ -8,6 +8,7 @@ import com.laerdal.okpi.auth.exception.AccessDeniedException;
 import com.laerdal.okpi.auth.mapper.UserMapper;
 import com.laerdal.okpi.auth.repository.RefreshTokenRepository;
 import com.laerdal.okpi.auth.repository.UserRepository;
+import com.laerdal.okpi.auth.service.NotificationService;
 import com.laerdal.okpi.auth.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +43,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -157,6 +162,51 @@ class UserServiceImplTest {
     }
 
     @Test
+    void assignManagerTeamStoresAssignmentsAndCreatesNotifications() {
+        User admin = user(1L, "admin@example.com", Role.ADMIN);
+        User manager = user(2L, "manager@example.com", Role.MANAGER);
+        User existingMember = user(10L, "member-a@example.com", Role.MEMBER, 2L);
+        User stayingMember = user(11L, "member-b@example.com", Role.MEMBER, 2L);
+        User newMember = user(12L, "member-c@example.com", Role.MEMBER, null);
+
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
+        when(userRepository.findByManagerId(2L)).thenReturn(List.of(existingMember, stayingMember));
+        when(userRepository.findAllById(List.of(11L, 12L))).thenReturn(List.of(stayingMember, newMember));
+        when(userRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("admin@example.com", "n/a")
+        );
+
+        userService.assignManagerTeam(2L, List.of(11L, 12L));
+
+        ArgumentCaptor<Iterable<User>> usersCaptor = ArgumentCaptor.forClass(Iterable.class);
+        verify(userRepository).saveAll(usersCaptor.capture());
+
+        List<User> savedUsers = new java.util.ArrayList<>();
+        usersCaptor.getValue().forEach(savedUsers::add);
+        assertThat(savedUsers).extracting(User::getId)
+                .containsExactlyInAnyOrder(12L, 10L);
+        assertThat(savedUsers).filteredOn(user -> user.getId().equals(12L))
+                .first()
+                .extracting(User::getManagerId)
+                .isEqualTo(2L);
+        assertThat(savedUsers).filteredOn(user -> user.getId().equals(10L))
+                .first()
+                .extracting(User::getManagerId)
+                .isNull();
+
+        ArgumentCaptor<Map<Long, String>> notificationsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(notificationService).createNotifications(notificationsCaptor.capture());
+        Map<Long, String> notifications = notificationsCaptor.getValue();
+        assertThat(notifications.keySet()).containsExactly(2L, 12L, 10L);
+        assertThat(notifications.get(2L)).contains("Added 1 member(s) and removed 1 member(s)");
+        assertThat(notifications.get(12L)).contains("assigned to Old Name");
+        assertThat(notifications.get(10L)).contains("removed from Old Name");
+    }
+
+    @Test
     void getUsersSummaryPreservesRequestedOrder() {
         User alice = user(1L, "alice@example.com", Role.ADMIN);
         User bob = user(2L, "bob@example.com", Role.MEMBER);
@@ -182,6 +232,10 @@ class UserServiceImplTest {
     }
 
     private static User user(Long id, String email, Role role) {
+        return user(id, email, role, null);
+    }
+
+    private static User user(Long id, String email, Role role, Long managerId) {
         return User.builder()
                 .id(id)
                 .email(email)
@@ -189,6 +243,7 @@ class UserServiceImplTest {
                 .firstName("Old")
                 .lastName("Name")
                 .role(role)
+                .managerId(managerId)
                 .active(true)
                 .createdAt(LocalDateTime.parse("2026-04-28T10:15:30"))
                 .updatedAt(LocalDateTime.parse("2026-04-28T10:15:30"))
@@ -202,6 +257,7 @@ class UserServiceImplTest {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getRole())
+                .managerId(user.getManagerId())
                 .active(user.isActive())
                 .createdAt(user.getCreatedAt())
                 .build();

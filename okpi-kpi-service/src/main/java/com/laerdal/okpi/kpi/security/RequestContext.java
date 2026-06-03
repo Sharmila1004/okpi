@@ -9,17 +9,27 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class RequestContext {
 
     public Long getUserId() {
-        String header = currentRequest().getHeader("X-User-Id");
-        return header == null || header.isBlank() ? null : Long.valueOf(header);
+        try {
+            String header = currentRequest().getHeader("X-User-Id");
+            return header == null || header.isBlank() ? null : Long.valueOf(header);
+        } catch (RuntimeException ex) {
+            // No request bound to context or invalid header
+            return null;
+        }
     }
 
     public String getUserRole() {
-        return currentRequest().getHeader("X-User-Role");
+        try {
+            return currentRequest().getHeader("X-User-Role");
+        } catch (RuntimeException ex) {
+            return null;
+        }
     }
 
     private HttpServletRequest currentRequest() {
         ServletRequestAttributes attributes =
-                (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) throw new IllegalStateException("No request bound to current thread");
         return attributes.getRequest();
     }
 }

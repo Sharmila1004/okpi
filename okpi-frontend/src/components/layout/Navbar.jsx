@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Button from "../common/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { getRoleLabel, isManagerOrAdmin } from "../../utils/display";
-import { getNotifications } from "../../api/notificationApi"; // ✅ ADD
+import { getNotifications } from "../../api/authApi"; // ✅ ADD
 
 function getHeaderMeta(pathname) {
   if (pathname === "/") {

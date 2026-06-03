@@ -10,7 +10,7 @@ INSERT INTO users (
 )
 VALUES (
            'admin@okpi.com',
-           'test123',
+           '$2a$12$p8nYHsloUlptM970PYz2MuN7nU5rE9EuhBDckx0q5V/jD8fQr1REu',
            'Admin',
            'User',
            'ADMIN',

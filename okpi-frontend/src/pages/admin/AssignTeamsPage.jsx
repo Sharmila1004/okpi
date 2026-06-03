@@ -69,6 +69,10 @@ export default function AssignTeamsPage() {
         .filter((m) => m && (m.managerId == null || String(m.managerId) === String(selectedManagerId)))
         .map((m) => ({ ...m, selected: String(m.managerId) === String(selectedManagerId) }));
       setMembers(filtered);
+      // inform other parts of the app that teams changed
+      try {
+        window.dispatchEvent(new Event('okpi:teams-updated'));
+      } catch (_) {}
     } catch (e) {
       setError("Failed to save team.");
     } finally {

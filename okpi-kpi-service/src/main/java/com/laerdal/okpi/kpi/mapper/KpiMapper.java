@@ -10,6 +10,7 @@ public class KpiMapper {
     public KpiResponse toResponse(KpiDefinition definition) {
         return KpiResponse.builder()
                 .id(definition.getId())
+                .ownerId(definition.getOwnerId())
                 .name(definition.getName())
                 .description(definition.getDescription())
                 .unit(definition.getUnit())

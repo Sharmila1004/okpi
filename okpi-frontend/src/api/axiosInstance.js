@@ -2,7 +2,8 @@ import axios from "axios";
 import { API_BASE_URL, STORAGE_KEYS } from "../utils/constants";
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  // If API_BASE_URL is empty (vite dev without env), fall back to API gateway at localhost:8080
+  baseURL: API_BASE_URL || "http://localhost:8080",
   headers: {
     "Content-Type": "application/json"
   }

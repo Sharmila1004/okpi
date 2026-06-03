@@ -1,0 +1,13 @@
+server:
+  port: 9082
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3308/okpi_objective
+    username: root
+    password: root
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8762/eureka/

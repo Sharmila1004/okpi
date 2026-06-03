@@ -16,6 +16,7 @@ public class UserResponse {
     private String firstName;
     private String lastName;
     private Role role;
+    private Long managerId;
     private boolean active;
     private LocalDateTime createdAt;
 }

@@ -48,6 +48,9 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column(name = "manager_id")
+    private Long managerId;
+
     @Column(name = "is_active", nullable = false)
     private boolean active;
 

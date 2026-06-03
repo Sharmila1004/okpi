@@ -62,6 +62,9 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Get the authenticated user profile")
     public UserResponse me(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            throw new com.laerdal.okpi.auth.exception.AuthenticationException("Unauthenticated");
+        }
         return userService.getCurrentUser(authentication.getName());
     }
 
@@ -70,6 +73,9 @@ public class AuthController {
     @Operation(summary = "Update the authenticated user profile")
     public UserResponse updateMe(Authentication authentication,
                                  @Valid @RequestBody UpdateProfileRequest request) {
+        if (authentication == null || authentication.getName() == null) {
+            throw new com.laerdal.okpi.auth.exception.AuthenticationException("Unauthenticated");
+        }
         return userService.updateCurrentUser(authentication.getName(), request);
     }
 }

@@ -29,7 +29,7 @@ docker-compose logs --tail=50 auth-service
 
 echo ""
 echo "4️⃣  Checking port availability..."
-lsof -i :8080 2>/dev/null && echo "✅ Port 8080 in use" || echo "❌ Port 8080 free"
+lsof -i :18080 2>/dev/null && echo "✅ Port 18080 in use" || echo "❌ Port 18080 free"
 lsof -i :8081 2>/dev/null && echo "✅ Port 8081 in use" || echo "❌ Port 8081 free"
 lsof -i :8082 2>/dev/null && echo "✅ Port 8082 in use" || echo "❌ Port 8082 free"
 lsof -i :8083 2>/dev/null && echo "✅ Port 8083 in use" || echo "❌ Port 8083 free"

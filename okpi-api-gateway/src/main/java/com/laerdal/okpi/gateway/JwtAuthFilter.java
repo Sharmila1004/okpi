@@ -11,6 +11,7 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -41,9 +42,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String authHeader = exchange.getRequest()
-                .getHeaders()
-                .getFirst(HttpHeaders.AUTHORIZATION);
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return onError(exchange);
@@ -62,17 +61,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return onError(exchange);
         }
 
-        String userId = claims.get("userId", String.class);
-        String userRole = claims.get("role", String.class);
-
-        ServerWebExchange mutatedExchange = exchange.mutate()
-                .request(request -> request.headers(headers -> {
-                    headers.remove("X-User-Id");
-                    headers.remove("X-User-Role");
-                    headers.add("X-User-Id", userId);
-                    headers.add("X-User-Role", userRole);
-                }))
+        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
+                .header("X-User-Id", claims.get("userId", String.class))
+                .header("X-User-Role", claims.get("role", String.class))
                 .build();
+
+        ServerWebExchange mutatedExchange = exchange.mutate().request(mutatedRequest).build();
 
         return chain.filter(mutatedExchange);
     }

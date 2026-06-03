@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.List;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -21,5 +22,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             WHERE (:role IS NULL OR u.role = :role)
             """)
     Page<User> findAllByRole(@Param("role") Role role, Pageable pageable);
+
+    List<User> findByManagerId(Long managerId);
 }
 

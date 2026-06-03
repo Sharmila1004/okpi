@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 public class KpiResponse {
     private Long id;
+    private Long ownerId;
     private String name;
     private String description;
     private String unit;
