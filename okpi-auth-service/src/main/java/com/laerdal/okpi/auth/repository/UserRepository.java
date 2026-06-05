@@ -24,5 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllByRole(@Param("role") Role role, Pageable pageable);
 
     List<User> findByManagerId(Long managerId);
+
+    Optional<User> findByResetToken(String token);
 }
 

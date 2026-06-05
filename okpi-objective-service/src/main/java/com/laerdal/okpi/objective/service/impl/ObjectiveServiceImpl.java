@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -108,7 +109,8 @@ public class ObjectiveServiceImpl implements ObjectiveService {
         Long userId = requestContext.getUserId();
         String role = requestContext.getUserRole();
 
-        Page<Objective> pageResult = isManager(role)
+        // members and managers only see what's assigned to them or owned by them
+        Page<Objective> pageResult = (isManager(role) || isMember(role))
                 ? objectiveRepository.findAssignedOrOwnedWithFilters(
                 userId, normalizedStatus, search, pageable)
                 : objectiveRepository.findVisibleWithFilters(
@@ -180,17 +182,86 @@ public class ObjectiveServiceImpl implements ObjectiveService {
     @Override
     @Transactional
     public ObjectiveResponse update(Long objectiveId, UpdateObjectiveRequest request) {
-        requireAuthenticated(requestContext.getUserId(), requestContext.getUserRole());
+        Long callerId = requestContext.getUserId();
+        String callerRole = requestContext.getUserRole();
+        requireAuthenticated(callerId, callerRole);
 
         Objective objective = objectiveRepository.findByIdAndIsDeletedFalse(objectiveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
-        requireOwnerOrAdmin(objective);
+
+        // Who can update this objective:
+        // - Admin always
+        // - Manager only if they are the owner OR they are an assignee of this objective
+        if (isManager(callerRole)) {
+            boolean isOwner = callerId.equals(objective.getOwnerId());
+            boolean isAssigned = objective.getAssignees().stream()
+                    .anyMatch(a -> callerId.equals(a.getUserId()));
+            if (!isOwner && !isAssigned) {
+                throw new AccessDeniedException("You are not assigned to this objective");
+            }
+        } else if (!isAdmin(callerRole)) {
+            throw new AccessDeniedException("Not allowed");
+        }
 
         ObjectiveStatus previousStatus = objective.getStatus();
 
         if (request.getTitle() != null) objective.setTitle(request.getTitle());
         if (request.getDescription() != null) objective.setDescription(request.getDescription());
         if (request.getStatus() != null) objective.setStatus(request.getStatus());
+        if (request.getStartDate() != null) objective.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) objective.setEndDate(request.getEndDate());
+
+        // Manager sub-assigning this objective to their team members (all or a subset)
+        if (request.getAssigneeIds() != null && isManager(callerRole)) {
+            List<Long> newMemberIds = request.getAssigneeIds().stream()
+                    .filter(Objects::nonNull).distinct().toList();
+
+            // Validate every picked user is a member of THIS manager's team
+            if (!newMemberIds.isEmpty()) {
+                List<AuthUserClient.UserSummary> summaries = authUserClient.getUsersSummary(newMemberIds);
+                Map<Long, AuthUserClient.UserSummary> byId = summaries.stream()
+                        .filter(Objects::nonNull)
+                        .filter(s -> s.id != null)
+                        .collect(Collectors.toMap(s -> s.id, s -> s, (a, b) -> a));
+
+                if (byId.size() != newMemberIds.size()) {
+                    throw new ResourceNotFoundException("One or more members not found");
+                }
+                for (AuthUserClient.UserSummary s : byId.values()) {
+                    if (!"MEMBER".equalsIgnoreCase(s.role)) {
+                        throw new AccessDeniedException("You can only assign members to this objective");
+                    }
+                    if (!Objects.equals(s.managerId, callerId)) {
+                        throw new AccessDeniedException(
+                                "You can only assign members from your own team");
+                    }
+                }
+            }
+
+            // Diff current vs new — only touch member-level assignees, keep the manager itself
+            Set<Long> currentMemberAssigneeIds = objective.getAssignees().stream()
+                    .map(ObjectiveAssignee::getUserId)
+                    .filter(id -> !id.equals(callerId)) // don't touch the manager's own assignee entry
+                    .collect(Collectors.toSet());
+
+            Set<Long> newIdSet = new HashSet<>(newMemberIds);
+
+            // Notify and remove members who were dropped
+            for (Long removedId : currentMemberAssigneeIds) {
+                if (!newIdSet.contains(removedId)) {
+                    objective.getAssignees().removeIf(a -> a.getUserId().equals(removedId));
+                    notify(removedId, "You have been removed from goal: \"" + objective.getTitle() + "\"");
+                }
+            }
+
+            // Add newly assigned members and notify them
+            for (Long uid : newMemberIds) {
+                if (!currentMemberAssigneeIds.contains(uid)) {
+                    objective.getAssignees().add(new ObjectiveAssignee(uid, objective));
+                    notify(uid, "You have been assigned to goal: \"" + objective.getTitle() + "\"");
+                }
+            }
+        }
 
         Objective saved = objectiveRepository.save(objective);
 
@@ -267,7 +338,8 @@ public class ObjectiveServiceImpl implements ObjectiveService {
         return byId;
     }
 
-    private void validateObjectiveAssignees(Long userId, String userRole, List<AuthUserClient.UserSummary> assignees) {
+    private void validateObjectiveAssignees(Long userId, String userRole,
+                                            List<AuthUserClient.UserSummary> assignees) {
         if (assignees == null || assignees.isEmpty()) {
             return;
         }
@@ -307,10 +379,15 @@ public class ObjectiveServiceImpl implements ObjectiveService {
 
     private void requireOwnerOrAdmin(Objective obj) {
         String role = requestContext.getUserRole();
-        if (isAdmin(role) || isManager(role)) return;
-        if (!requestContext.getUserId().equals(obj.getOwnerId())) {
-            throw new AccessDeniedException("Not allowed");
+        Long callerId = requestContext.getUserId();
+        if (isAdmin(role)) return;
+        if (isManager(role)) {
+            boolean isOwner = callerId.equals(obj.getOwnerId());
+            boolean isAssigned = obj.getAssignees().stream()
+                    .anyMatch(a -> callerId.equals(a.getUserId()));
+            if (isOwner || isAssigned) return;
         }
+        throw new AccessDeniedException("Not allowed");
     }
 
     private static boolean isAdmin(String role) { return "ADMIN".equals(role); }

@@ -69,6 +69,9 @@ export default function ObjectiveFormPage() {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
+    // whether this objective was assigned TO the manager by admin (not created by them)
+    const [isAssignedToMe, setIsAssignedToMe] = useState(false);
+
     // Load the correct user list based on role
     useEffect(() => {
         async function loadUsers() {
@@ -76,11 +79,9 @@ export default function ObjectiveFormPage() {
             setUsersError("");
             try {
                 if (isAdmin) {
-                    // Admin assigns to managers only
                     const resp = await getUsers({ page: 0, size: 1000, role: "MANAGER" });
                     setAssignableUsers(resp.content ?? []);
                 } else if (isManager && user?.id) {
-                    // Manager assigns to their own team members only
                     const members = await getTeamMembers(user.id);
                     setAssignableUsers(members ?? []);
                 } else {
@@ -100,6 +101,23 @@ export default function ObjectiveFormPage() {
         async function loadObjective() {
             try {
                 const objective = await getObjective(objectiveId);
+
+                const myId = String(user?.id);
+                const objAssigneeIds = (objective.assigneeIds ?? []).map(String);
+                const iAmAssignee = objAssigneeIds.includes(myId);
+                const iAmOwner = String(objective.ownerId) === myId;
+
+                // manager was assigned this by admin — not the owner
+                const assignedToMe = isManager && iAmAssignee && !iAmOwner;
+                setIsAssignedToMe(assignedToMe);
+
+                // if manager was assigned this by admin, strip the manager's own id
+                // from pre-checked boxes — the team member checkboxes should only
+                // show member-level ids, not the manager themselves
+                const preCheckedIds = assignedToMe
+                    ? objAssigneeIds.filter((id) => id !== myId)
+                    : objAssigneeIds;
+
                 setFormData({
                     title: objective.title ?? "",
                     description: objective.description ?? "",
@@ -109,14 +127,14 @@ export default function ObjectiveFormPage() {
                     endDate:
                         formatDateInput(objective.endDate) ||
                         createDateInputValue(OBJECTIVE_DEFAULT_DURATION_DAYS),
-                    assigneeIds: (objective.assigneeIds ?? []).map(String),
+                    assigneeIds: preCheckedIds,
                 });
             } catch (err) {
                 setError(err.response?.data?.message ?? "Failed to load objective.");
             }
         }
         loadObjective();
-    }, [isEditMode, objectiveId]);
+    }, [isEditMode, objectiveId, user?.id, isManager]);
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -165,10 +183,21 @@ export default function ObjectiveFormPage() {
         }
     }
 
-    const assigneeSectionLabel = isAdmin ? "Assign to managers" : "Assign to team members";
+    // dynamic label depending on context
+    const assigneeSectionLabel = isAdmin
+        ? "Assign to managers"
+        : isAssignedToMe
+            ? "Assign to team members"
+            : "Assign to team members";
+
     const assigneeSectionDesc = isAdmin
         ? "Select which managers this goal belongs to."
-        : "Select which of your team members can update progress.";
+        : isAssignedToMe
+            ? "Pick which of your team members work on this."
+            : "Select which of your team members can update progress.";
+
+    // members never see the assign section
+    const showAssigneeSection = isAdmin || isManager;
 
     return (
         <div className="card-surface max-w-3xl p-6">
@@ -233,58 +262,61 @@ export default function ObjectiveFormPage() {
                     </label>
                 )}
 
-                <section className="space-y-3 rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
-                    <div>
-                        <h2 className="text-sm font-semibold text-ink">{assigneeSectionLabel}</h2>
-                        <p className="mt-1 text-sm text-slate-500">{assigneeSectionDesc}</p>
-                    </div>
-                    {usersError ? <ErrorAlert message={usersError} /> : null}
-                    {loadingUsers ? <LoadingSpinner label="Loading users..." /> : null}
-                    {!loadingUsers && !usersError ? (
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {assignableUsers.map((u) => {
-                                const uid = String(u.id);
-                                const name =
-                                    [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
-                                    u.email;
-                                return (
-                                    <label
-                                        key={u.id}
-                                        className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            value={uid}
-                                            checked={formData.assigneeIds.includes(uid)}
-                                            onChange={handleAssigneeChange}
-                                            className="h-4 w-4 rounded border-slate-300"
-                                        />
-                                        <span className="min-w-0">
-                      <span className="block truncate font-semibold text-ink">
-                        {name}
-                      </span>
-                      <span className="block truncate text-xs text-slate-500">
-                        {u.email}
-                      </span>
-                    </span>
-                                    </label>
-                                );
-                            })}
-                            {!assignableUsers.length ? (
-                                <p className="text-sm text-slate-500">
-                                    {isAdmin
-                                        ? "No managers found."
-                                        : "No team members assigned to you yet."}
-                                </p>
-                            ) : null}
+                {showAssigneeSection && (
+                    <section className="space-y-3 rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+                        <div>
+                            <h2 className="text-sm font-semibold text-ink">{assigneeSectionLabel}</h2>
+                            <p className="mt-1 text-sm text-slate-500">{assigneeSectionDesc}</p>
                         </div>
-                    ) : null}
-                    {!loadingUsers && !usersError ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
-                            Assigned: {summarizeNames(selectedAssigneeNames)}
-                        </div>
-                    ) : null}
-                </section>
+                        {usersError ? <ErrorAlert message={usersError} /> : null}
+                        {loadingUsers ? <LoadingSpinner label="Loading users..." /> : null}
+                        {!loadingUsers && !usersError ? (
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {assignableUsers.map((u) => {
+                                    const uid = String(u.id);
+                                    const name =
+                                        [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
+                                        u.email;
+                                    return (
+                                        <label
+                                            key={u.id}
+                                            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 transition-colors"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                value={uid}
+                                                checked={formData.assigneeIds.includes(uid)}
+                                                onChange={handleAssigneeChange}
+                                                className="h-4 w-4 rounded border-slate-300"
+                                            />
+                                            <span className="min-w-0">
+                                                <span className="block truncate font-semibold text-ink">
+                                                    {name}
+                                                </span>
+                                                <span className="block truncate text-xs text-slate-500">
+                                                    {u.email}
+                                                </span>
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                                {!assignableUsers.length ? (
+                                    <p className="text-sm text-slate-500">
+                                        {isAdmin
+                                            ? "No managers found."
+                                            : "No team members assigned to you yet."}
+                                    </p>
+                                ) : null}
+                            </div>
+                        ) : null}
+                        {!loadingUsers && !usersError ? (
+                            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
+                                {isAssignedToMe ? "Assigned members: " : "Assigned: "}
+                                {summarizeNames(selectedAssigneeNames)}
+                            </div>
+                        ) : null}
+                    </section>
+                )}
 
                 <Button type="submit" disabled={submitting}>
                     {submitting ? "Saving..." : "Save goal"}

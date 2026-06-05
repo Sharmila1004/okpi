@@ -2,4 +2,4 @@
 -- the application uses at runtime.
 UPDATE users
 SET password_hash = '$2a$12$zwCi8.AfWwupW7A61zOzg.ynGuJQJVOyOFkIT/TaHcPNTIlJpUYwS'
-WHERE email = 'admin@okpi.com';
+WHERE email = 'admin@yopmail.com';

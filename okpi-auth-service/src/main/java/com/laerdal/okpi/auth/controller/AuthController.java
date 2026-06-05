@@ -1,81 +1,144 @@
 package com.laerdal.okpi.auth.controller;
 
-import com.laerdal.okpi.auth.dto.request.LoginRequest;
-import com.laerdal.okpi.auth.dto.request.RefreshTokenRequest;
-import com.laerdal.okpi.auth.dto.request.RegisterRequest;
-import com.laerdal.okpi.auth.dto.request.UpdateProfileRequest;
+import com.laerdal.okpi.auth.dto.request.*;
 import com.laerdal.okpi.auth.dto.response.AuthResponse;
-import com.laerdal.okpi.auth.dto.response.UserResponse;
+import com.laerdal.okpi.auth.entity.OtpVerification;
+import com.laerdal.okpi.auth.entity.User;
+import com.laerdal.okpi.auth.repository.OtpRepository;
+import com.laerdal.okpi.auth.repository.UserRepository;
 import com.laerdal.okpi.auth.service.AuthService;
-import com.laerdal.okpi.auth.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import com.laerdal.okpi.auth.service.EmailService;
+
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication; // ✅ IMPORTANT
+
+import java.time.Instant;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
-@RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Login, token, and profile APIs")
 public class AuthController {
 
+    private final OtpRepository otpRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
-    private final UserService userService;
 
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Register a new user")
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
+    public AuthController(OtpRepository otpRepository,
+                          UserRepository userRepository,
+                          EmailService emailService,
+                          PasswordEncoder passwordEncoder,
+                          AuthService authService) {
+        this.otpRepository = otpRepository;
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+        this.passwordEncoder = passwordEncoder;
+        this.authService = authService;
     }
 
+    // ✅ LOGIN
     @PostMapping("/login")
-    @Operation(summary = "Log in and receive access and refresh tokens")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
-    @PostMapping("/refresh")
-    @Operation(summary = "Refresh an access token")
-    public AuthResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return authService.refresh(request);
+    // ✅ REGISTER (returns token ✅)
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
+    // ✅ LOGOUT
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Revoke a refresh token")
     public void logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request);
     }
 
+    // ✅ ✅ ✅ FIXED /ME ENDPOINT (CORRECT POSITION)
     @GetMapping("/me")
-    @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Get the authenticated user profile")
-    public UserResponse me(Authentication authentication) {
+    public User getCurrentUser(Authentication authentication) {
+
         if (authentication == null || authentication.getName() == null) {
-            throw new com.laerdal.okpi.auth.exception.AuthenticationException("Unauthenticated");
+            throw new RuntimeException("Unauthenticated");
         }
-        return userService.getCurrentUser(authentication.getName());
+
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    @PutMapping("/me")
-    @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Update the authenticated user profile")
-    public UserResponse updateMe(Authentication authentication,
-                                 @Valid @RequestBody UpdateProfileRequest request) {
-        if (authentication == null || authentication.getName() == null) {
-            throw new com.laerdal.okpi.auth.exception.AuthenticationException("Unauthenticated");
+    // ✅ SEND OTP
+    @PostMapping("/send-otp")
+    public void sendOtp(@RequestBody EmailRequest request) {
+
+        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+
+        otpRepository.save(OtpVerification.builder()
+                .email(request.getEmail())
+                .otp(otp)
+                .expiryTime(Instant.now().plusSeconds(300))
+                .build());
+
+        emailService.send(
+                request.getEmail(),
+                "OTP Verification",
+                "Your OTP is: " + otp
+        );
+    }
+
+    // ✅ VERIFY OTP
+    @PostMapping("/verify-otp")
+    public void verifyOtp(@RequestBody OtpRequest request) {
+
+        OtpVerification record = otpRepository
+                .findByEmailAndOtp(request.getEmail(), request.getOtp())
+                .orElseThrow(() -> new RuntimeException("Invalid OTP"));
+
+        if (record.getExpiryTime().isBefore(Instant.now())) {
+            throw new RuntimeException("OTP expired");
         }
-        return userService.updateCurrentUser(authentication.getName(), request);
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        userRepository.save(user);
+    }
+
+    // ✅ FORGOT PASSWORD
+    @PostMapping("/forgot-password")
+    public void forgotPassword(@RequestBody EmailRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = UUID.randomUUID().toString();
+
+        userRepository.save(user);
+
+        emailService.send(
+                request.getEmail(),
+                "Reset Password",
+                "http://localhost:5173/reset-password?token=" + token
+        );
+    }
+
+    // ✅ RESET PASSWORD
+    @PostMapping("/reset-password")
+    public void resetPassword(@RequestBody ResetPasswordRequest request) {
+
+        User user = userRepository.findByResetToken(request.getToken())
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        user.setPasswordHash(
+                passwordEncoder.encode(request.getNewPassword())
+        );
+
+        userRepository.save(user);
     }
 }

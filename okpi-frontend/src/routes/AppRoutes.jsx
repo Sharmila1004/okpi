@@ -3,6 +3,8 @@ import MainLayout from "../components/layout/MainLayout";
 import { ROLES } from "../utils/constants";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import ObjectivesListPage from "../pages/objectives/ObjectivesListPage";
 import ObjectiveDetailPage from "../pages/objectives/ObjectiveDetailPage";
@@ -23,8 +25,14 @@ function LayoutRoute({ children }) {
 export default function AppRoutes() {
     return (
         <Routes>
+
+            {/* ✅ Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+            {/* ✅ Protected routes */}
             <Route element={<ProtectedRoute />}>
                 <Route
                     path="/"
@@ -34,6 +42,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/account"
                     element={
@@ -42,6 +51,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/objectives"
                     element={
@@ -50,6 +60,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route element={<ProtectedRoute roles={[ROLES.MANAGER, ROLES.ADMIN]} />}>
                     <Route
                         path="/objectives/new"
@@ -59,6 +70,7 @@ export default function AppRoutes() {
                             </LayoutRoute>
                         }
                     />
+
                     <Route
                         path="/objectives/:objectiveId/edit"
                         element={
@@ -68,6 +80,7 @@ export default function AppRoutes() {
                         }
                     />
                 </Route>
+
                 <Route
                     path="/objectives/:objectiveId"
                     element={
@@ -76,6 +89,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/insights"
                     element={
@@ -84,6 +98,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/insights/new"
                     element={
@@ -92,6 +107,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/insights/:kpiId"
                     element={
@@ -100,6 +116,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/insights/:kpiId/edit"
                     element={
@@ -108,6 +125,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/kpis"
                     element={
@@ -116,6 +134,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/kpis/new"
                     element={
@@ -124,6 +143,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/kpis/:kpiId"
                     element={
@@ -132,6 +152,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/kpis/:kpiId/edit"
                     element={
@@ -141,6 +162,8 @@ export default function AppRoutes() {
                     }
                 />
             </Route>
+
+            {/* ✅ Admin routes */}
             <Route element={<ProtectedRoute roles={[ROLES.ADMIN]} />}>
                 <Route
                     path="/admin/users"
@@ -150,6 +173,7 @@ export default function AppRoutes() {
                         </LayoutRoute>
                     }
                 />
+
                 <Route
                     path="/admin/teams"
                     element={
@@ -159,8 +183,11 @@ export default function AppRoutes() {
                     }
                 />
             </Route>
+
+            {/* ✅ Fallback */}
             <Route path="/404" element={<NotFoundPage />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
+
         </Routes>
     );
 }

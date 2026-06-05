@@ -98,7 +98,12 @@ export default function LoginPage() {
               />
               Remember me
             </label>
-            <span className="text-sm font-semibold text-ink/90">Forgot password?</span>
+            <p
+                className="text-sm font-semibold text-ink/90 cursor-pointer hover:underline"
+                onClick={() => navigate("/forgot-password")}
+            >
+              Forgot password?
+            </p>
           </div>
 
           <Button className="w-full" type="submit" disabled={loading}>
