@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Button from "../common/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { getRoleLabel, isManagerOrAdmin } from "../../utils/display";
-import { getNotifications } from "../../api/authApi"; // ✅ ADD
+import { getNotifications, markNotificationRead } from "../../api/authApi"; // ✅ ADD
+
 
 function getHeaderMeta(pathname) {
   if (pathname === "/") {
@@ -100,23 +101,39 @@ export default function Navbar() {
           {/* RIGHT */}
           <div className="flex items-center gap-3">
 
-            {/* 🔔 NOTIFICATIONS */}
-            <div className="relative">
-              <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  aria-label="Notifications"
-              >
-                <Bell className="h-4 w-4" />
+             {/* 🔔 NOTIFICATIONS */}
+             <div className="relative">
+               <Button
+                   variant="secondary"
+                   size="icon"
+                   onClick={() => {
+                     const isOpening = !showDropdown;
+                     setShowDropdown(isOpening);
 
-                {/* 🔴 RED BADGE */}
-                {notifications.length > 0 && (
-                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full">
-                  {notifications.length}
-                </span>
-                )}
-              </Button>
+                     // If opening, optimistically mark unread notifications as read in the UI
+                     if (isOpening) {
+                       const unread = (notifications ?? []).filter((n) => !n.read);
+                       if (unread.length) {
+                         // update UI immediately
+                         setNotifications((cur) => (cur ?? []).map((n) => ({ ...n, read: true })));
+                         // mark on server (fire-and-forget)
+                         unread.forEach((n) => {
+                           markNotificationRead(n.id).catch(() => {});
+                         });
+                       }
+                     }
+                   }}
+                   aria-label="Notifications"
+               >
+                 <Bell className="h-4 w-4" />
+
+                 {/* 🔴 RED BADGE */}
+                 { (notifications ?? []).filter((n) => !n.read).length > 0 && (
+                     <span className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full">
+                   {(notifications ?? []).filter((n) => !n.read).length}
+                 </span>
+                 )}
+               </Button>
 
               {/* DROPDOWN */}
               {showDropdown && (

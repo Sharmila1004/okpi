@@ -116,8 +116,32 @@ export default function DashboardPage() {
   const insightsState = useFetch(getKpis, [authKey]);
 
   useEffect(() => {
-    async function onObjectiveUpdated() {
+    async function onObjectiveUpdated(event) {
       try {
+        const deletedId = event?.detail?.objectiveId;
+        const deleted = event?.detail?.deleted;
+        const objective = event?.detail?.objective;
+
+        if (deleted && deletedId != null) {
+          setObjectiveDashboardData((current) => {
+            const cur = current ?? { objectiveCount: 0, keyResultCount: 0, objectives: [] };
+            const filtered = (cur.objectives ?? []).filter((o) => String(o.id) !== String(deletedId));
+            const newObjectiveCount = typeof cur.objectiveCount === "number" ? Math.max(0, cur.objectiveCount - 1) : filtered.length;
+            return { ...cur, objectives: filtered, objectiveCount: newObjectiveCount };
+          });
+          return;
+        }
+
+        if (objective) {
+          setObjectiveDashboardData((current) => {
+            const cur = current ?? { objectiveCount: 0, keyResultCount: 0, objectives: [] };
+            const objs = (cur.objectives ?? []).filter((o) => String(o.id) !== String(objective.id));
+            objs.unshift(objective);
+            return { ...cur, objectives: objs };
+          });
+          return;
+        }
+
         const dash = await getObjectiveDashboard(dashboardOwnerId);
         setObjectiveDashboardData(dash);
       } catch { /* ignore */ }
@@ -131,6 +155,17 @@ export default function DashboardPage() {
   };
   const objectives = dashboard.objectives ?? [];
   const insights = insightsState.data ?? [];
+
+  // DEBUG: log dashboard objectives shape to console for inspection
+  // Remove this after diagnosing the API shape
+  try {
+    // eslint-disable-next-line no-console
+    console.debug("OKPI dashboard.objectives:", dashboard.objectives);
+  } catch (e) {}
+
+  // Temporary UI debug toggle to help inspect objectives rendered by dashboard
+  const [showDebug, setShowDebug] = useState(false);
+
 
   const summaryIds = useMemo(() => {
     if (!showTeamWatchlist) return [];
@@ -161,7 +196,7 @@ export default function DashboardPage() {
     let groups = showTeamWatchlist
         ? groupObjectivesByOwner(objectives, userDirectory)
         : [];
-    if (isAdmin) groups = groups.filter((g) => g.ownerRole === ROLES.MANAGER);
+    if (isAdmin) groups = groups.filter((g) => g.ownerRole === ROLES.MANAGER || g.ownerRole === ROLES.ADMIN);
     return groups;
   }, [objectives, showTeamWatchlist, userDirectory, isAdmin]);
 
@@ -233,15 +268,29 @@ export default function DashboardPage() {
     return <LoadingSpinner label="Loading dashboard..." />;
   }
 
-  const completedObjectives = objectives.filter(
-      (o) => o.status === "COMPLETED"
-  ).length;
-  const onTrackObjectives = objectives.filter(
-      (o) => o.status === "ON_TRACK" || o.status === "COMPLETED"
-  ).length;
-  const attentionObjectives = objectives.filter(
-      (o) => o.status === "AT_RISK" || o.status === "OFF_TRACK"
-  ).length;
+  // Normalize status comparisons to be resilient to different shapes (string, enum object, null)
+  const getStatus = (o) => {
+    const s = o?.status;
+    if (s == null) return "";
+    if (typeof s === "string") return s.toUpperCase();
+    if (typeof s === "object" && s.toString) return String(s).toUpperCase();
+    try {
+      return String(s).toUpperCase();
+    } catch (e) {
+      return "";
+    }
+  };
+
+  const completedObjectives = objectives.filter((o) => getStatus(o) === "COMPLETED").length;
+  const onTrackObjectives = objectives.filter((o) => {
+    const st = getStatus(o);
+    return st === "ON_TRACK" || st === "COMPLETED";
+  }).length;
+  const attentionObjectives = objectives.filter((o) => {
+    const st = getStatus(o);
+    return st === "AT_RISK" || st === "OFF_TRACK";
+  }).length;
+
   const averageProgress = objectives.length
       ? Math.round(
           objectives.reduce((t, o) => t + Number(o.progress ?? 0), 0) /
@@ -257,7 +306,7 @@ export default function DashboardPage() {
   const ActionLink = hasRouter ? RouterLink : "a";
 
   return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         {[...new Set(loadErrors)].map((msg, i) => (
             <ErrorAlert key={i} message={msg} />
         ))}
@@ -267,7 +316,7 @@ export default function DashboardPage() {
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
               OKPI Hub
             </p>
-            <h1 className="text-3xl font-black tracking-tight text-ink">Overview</h1>
+            <h1 className="text-2xl font-black tracking-tight text-ink">Overview</h1>
           </div>
           {canCreateObjectives && (
               <ActionLink to="/objectives/new">
@@ -280,7 +329,7 @@ export default function DashboardPage() {
         </section>
 
         {/* ── Stats — all 4 clickable ── */}
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <ActionLink
               to="/objectives"
               className="group block h-full cursor-pointer transition-transform duration-200 hover:-translate-y-0.5"
@@ -341,7 +390,7 @@ export default function DashboardPage() {
         </section>
 
         {/* ── Team watchlist ── */}
-        <section className="card-surface p-6">
+        <section className="card-surface p-4">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black tracking-tight text-ink">
@@ -386,12 +435,12 @@ export default function DashboardPage() {
                         return (
                             <article
                                 key={group.ownerId}
-                                className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50/80"
+                                className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50/80"
                             >
                               <button
                                   id={headerId}
                                   type="button"
-                                  className={`flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f67ff]/30 ${isExpanded ? "bg-white" : ""}`}
+                                  className={`flex w-full items-start justify-between gap-4 px-4 py-3 text-left transition hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f67ff]/30 ${isExpanded ? "bg-white" : ""}`}
                                   aria-expanded={isExpanded}
                                   aria-controls={panelId}
                                   onClick={() =>
@@ -508,7 +557,7 @@ export default function DashboardPage() {
                       })}
                     </div>
                 ) : (
-                    <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 p-6 text-sm text-slate-500">
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-500">
                       No team objectives found.
                     </div>
                 )
@@ -518,7 +567,7 @@ export default function DashboardPage() {
                       <ActionLink
                           key={insight.id}
                           to={`/insights/${insight.id}`}
-                          className="flex items-center justify-between rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-4 transition hover:border-[#2f67ff]/30 hover:bg-white"
+                          className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-3 transition hover:border-[#2f67ff]/30 hover:bg-white"
                       >
                         <div className="min-w-0">
                           <div className="font-semibold text-ink">{insight.name}</div>

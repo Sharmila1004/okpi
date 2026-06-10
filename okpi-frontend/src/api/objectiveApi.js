@@ -44,7 +44,14 @@ export async function getObjectiveDashboard(ownerId) {
 
   const suffix = searchParams.toString() ? `?${searchParams}` : "";
   const response = await axiosInstance.get(`/api/v1/objectives/dashboard${suffix}`);
-  return response.data;
+  const data = response.data || {};
+
+  // Normalize objectives so progress is available as `progress` (align with getObjectives/getObjective)
+  if (Array.isArray(data.objectives)) {
+    data.objectives = data.objectives.map(normalizeObjective);
+  }
+
+  return data;
 }
 
 export async function createObjective(payload) {

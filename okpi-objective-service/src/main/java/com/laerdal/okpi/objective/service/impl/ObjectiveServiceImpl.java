@@ -153,18 +153,21 @@ public class ObjectiveServiceImpl implements ObjectiveService {
         String role = requestContext.getUserRole();
         Long userId = requestContext.getUserId();
 
+        // Start from all objectives but exclude logically deleted ones
+        List<Objective> allNonDeleted = objectiveRepository.findAll().stream()
+                .filter(o -> o != null && !o.isDeleted())
+                .toList();
+
         List<Objective> objectives;
         if (isAdmin(role)) {
             objectives = ownerId != null
-                    ? objectiveRepository.findAll().stream()
-                      .filter(o -> o.getOwnerId().equals(ownerId)).toList()
-                    : objectiveRepository.findAll();
+                    ? allNonDeleted.stream().filter(o -> o.getOwnerId().equals(ownerId)).toList()
+                    : allNonDeleted;
         } else {
-            objectives = objectiveRepository.findAll().stream()
-                    .filter(obj ->
-                            obj.getOwnerId().equals(userId) ||
-                                    obj.getAssignees().stream().anyMatch(a -> userId.equals(a.getUserId()))
-                    ).toList();
+            objectives = allNonDeleted.stream()
+                    .filter(obj -> obj.getOwnerId().equals(userId)
+                            || obj.getAssignees().stream().anyMatch(a -> userId.equals(a.getUserId())))
+                    .toList();
         }
 
         return OkrDashboardResponse.builder()

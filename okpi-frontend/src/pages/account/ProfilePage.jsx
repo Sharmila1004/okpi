@@ -156,11 +156,13 @@ export default function ProfilePage() {
               disabled={!canEditProfile}
           />
           <p className="text-xs text-slate-500">Only admins can edit profile details.</p>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <Button type="submit" disabled={saving || !canEditProfile}>
-              {saving ? "Saving..." : "Save changes"}
-            </Button>
-          </div>
+          {canEditProfile && (
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save changes"}
+                </Button>
+              </div>
+          )}
         </form>
       </div>
   );

@@ -159,6 +159,12 @@ export default function ObjectiveDetailPage() {
 
     try {
       await deleteObjective(objectiveId);
+      // notify listeners (dashboard) that an objective changed/deleted
+      try {
+        window.dispatchEvent(new CustomEvent("okpi:objective-updated", { detail: { objectiveId, deleted: true } }));
+      } catch (e) {
+        // ignore dispatch errors
+      }
       navigate("/objectives");
     } catch (error) {
       setObjectiveError(error.response?.data?.message ?? "Failed to delete objective.");

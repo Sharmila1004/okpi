@@ -38,7 +38,16 @@ export default function ObjectivesListPage() {
   }, [filterParam, debouncedSearch]);
 
   useEffect(() => {
-    function handler() {
+    function handler(event) {
+      try {
+        const deletedId = event?.detail?.objectiveId;
+        const deleted = event?.detail?.deleted;
+        if (deleted && deletedId != null) {
+          setData((current) => (Array.isArray(current) ? current.filter((o) => String(o.id) !== String(deletedId)) : current));
+          return;
+        }
+      } catch (e) {}
+
       getObjectives()
           .then((objs) => setData(objs))
           .catch(() => {});
