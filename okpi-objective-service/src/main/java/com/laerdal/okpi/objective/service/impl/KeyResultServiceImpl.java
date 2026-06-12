@@ -2,26 +2,37 @@ package com.laerdal.okpi.objective.service.impl;
 
 import com.laerdal.okpi.objective.dto.request.CreateKeyResultRequest;
 import com.laerdal.okpi.objective.dto.request.UpdateKeyResultRequest;
+import com.laerdal.okpi.objective.dto.response.JiraIssueDto;
 import com.laerdal.okpi.objective.dto.response.KeyResultResponse;
+import com.laerdal.okpi.objective.entity.JiraIssue;
 import com.laerdal.okpi.objective.entity.KeyResult;
+import com.laerdal.okpi.objective.entity.KrJiraMapping;
 import com.laerdal.okpi.objective.entity.Notification;
 import com.laerdal.okpi.objective.entity.Objective;
 import com.laerdal.okpi.objective.enums.KeyResultStatus;
 import com.laerdal.okpi.objective.exception.AccessDeniedException;
 import com.laerdal.okpi.objective.exception.ResourceNotFoundException;
 import com.laerdal.okpi.objective.mapper.KeyResultMapper;
+import com.laerdal.okpi.objective.repository.JiraIssueRepository;
 import com.laerdal.okpi.objective.repository.KeyResultRepository;
+import com.laerdal.okpi.objective.repository.KrJiraMappingRepository;
 import com.laerdal.okpi.objective.repository.NotificationRepository;
 import com.laerdal.okpi.objective.repository.ObjectiveRepository;
 import com.laerdal.okpi.objective.security.RequestContext;
 import com.laerdal.okpi.objective.service.KeyResultService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * CHANGED:
+ *  - Injected KrJiraMappingRepository and JiraIssueRepository
+ *  - Added private helper resolveJiraIssues(krId) that fetches linked tickets
+ *  - getByObjectiveId, create, update now attach jiraIssues to responses
+ *  - Constructor updated accordingly
+ */
 @Service
 public class KeyResultServiceImpl implements KeyResultService {
 
@@ -32,19 +43,32 @@ public class KeyResultServiceImpl implements KeyResultService {
     private final NotificationRepository notificationRepository;
     private final AuthNotificationClient authNotificationClient;
 
-    public KeyResultServiceImpl(KeyResultRepository keyResultRepository,
-                                ObjectiveRepository objectiveRepository,
-                                KeyResultMapper keyResultMapper,
-                                RequestContext requestContext,
-                                NotificationRepository notificationRepository,
-                                AuthNotificationClient authNotificationClient) {
+    // NEW
+    private final KrJiraMappingRepository krJiraMappingRepository;
+    private final JiraIssueRepository jiraIssueRepository;
+
+    public KeyResultServiceImpl(
+            KeyResultRepository keyResultRepository,
+            ObjectiveRepository objectiveRepository,
+            KeyResultMapper keyResultMapper,
+            RequestContext requestContext,
+            NotificationRepository notificationRepository,
+            AuthNotificationClient authNotificationClient,
+            // NEW
+            KrJiraMappingRepository krJiraMappingRepository,
+            JiraIssueRepository jiraIssueRepository) {
         this.keyResultRepository = keyResultRepository;
         this.objectiveRepository = objectiveRepository;
         this.keyResultMapper = keyResultMapper;
         this.requestContext = requestContext;
         this.notificationRepository = notificationRepository;
         this.authNotificationClient = authNotificationClient;
+        // NEW
+        this.krJiraMappingRepository = krJiraMappingRepository;
+        this.jiraIssueRepository = jiraIssueRepository;
     }
+
+    // ── Public API ─────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -75,7 +99,7 @@ public class KeyResultServiceImpl implements KeyResultService {
         KeyResult saved = keyResultRepository.save(keyResult);
         recalculateObjectiveProgress(objective);
 
-        // Notify all assignees of this objective that a new key result was added
+        // Notify assignees
         String msg = "A new key result has been added to goal \""
                 + objective.getTitle() + "\": " + request.getTitle();
         objective.getAssignees().forEach(assignee -> {
@@ -84,7 +108,8 @@ public class KeyResultServiceImpl implements KeyResultService {
             }
         });
 
-        return keyResultMapper.toResponse(saved);
+        // CHANGED: attach jira issues (empty for a brand-new KR, but consistent)
+        return keyResultMapper.toResponse(saved, resolveJiraIssues(saved.getId()));
     }
 
     @Override
@@ -93,8 +118,10 @@ public class KeyResultServiceImpl implements KeyResultService {
         Objective objective = objectiveRepository.findByIdAndIsDeletedFalse(objectiveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
         requireViewer(objective);
+
+        // CHANGED: for each KR, fetch and attach its linked Jira tickets
         return keyResultRepository.findAllByObjective_Id(objectiveId).stream()
-                .map(keyResultMapper::toResponse)
+                .map(kr -> keyResultMapper.toResponse(kr, resolveJiraIssues(kr.getId())))
                 .toList();
     }
 
@@ -105,18 +132,21 @@ public class KeyResultServiceImpl implements KeyResultService {
         KeyResult keyResult = keyResultRepository.findById(keyResultId)
                 .orElseThrow(() -> new ResourceNotFoundException("Key result not found"));
         Objective objective = keyResult.getObjective();
+
         boolean canManage = canManage(objective);
         boolean canUpdateProgress = canManage || isAssignedToObjective(objective);
         if (!canUpdateProgress) {
             throw new AccessDeniedException(
                     "Only the owner, admin, or assigned users can update this key result");
         }
+
         if (!canManage && (request.getTitle() != null
                 || request.getDescription() != null
                 || request.getTargetValue() != null)) {
             throw new AccessDeniedException(
                     "Assigned members can only update progress and status");
         }
+
         if (canManage && request.getTitle() != null) keyResult.setTitle(request.getTitle());
         if (canManage && request.getDescription() != null)
             keyResult.setDescription(request.getDescription());
@@ -126,9 +156,12 @@ public class KeyResultServiceImpl implements KeyResultService {
         if (request.getStatus() != null) keyResult.setStatus(request.getStatus());
         keyResult.setUpdatedByUserId(requestContext.getUserId());
         keyResult.setUpdatedAt(Instant.now());
+
         KeyResult saved = keyResultRepository.save(keyResult);
         recalculateObjectiveProgress(saved.getObjective());
-        return keyResultMapper.toResponse(saved);
+
+        // CHANGED: attach jira issues
+        return keyResultMapper.toResponse(saved, resolveJiraIssues(saved.getId()));
     }
 
     @Override
@@ -139,10 +172,38 @@ public class KeyResultServiceImpl implements KeyResultService {
         requireOwnerOrAdmin(keyResult.getObjective());
         Objective objective = keyResult.getObjective();
         keyResultRepository.delete(keyResult);
+        // kr_jira_mapping rows are cascade-deleted by the FK constraint
         recalculateObjectiveProgress(objective);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── NEW: Jira helper ───────────────────────────────────────────────────
+
+    /**
+     * Fetch all Jira issues linked to a key result by its id.
+     * Returns an empty list if there are no mappings — never null.
+     */
+    private List<JiraIssueDto> resolveJiraIssues(Long krId) {
+        List<String> issueKeys = krJiraMappingRepository.findAllByKrId(krId)
+                .stream()
+                .map(KrJiraMapping::getIssueKey)
+                .toList();
+
+        if (issueKeys.isEmpty()) {
+            return List.of();
+        }
+
+        return jiraIssueRepository.findAllByIssueKeyIn(issueKeys)
+                .stream()
+                .map(ji -> JiraIssueDto.builder()
+                        .issueKey(ji.getIssueKey())
+                        .summary(ji.getSummary())
+                        .status(ji.getStatus())
+                        .progressPercent(ji.getProgressPercent())
+                        .build())
+                .toList();
+    }
+
+    // ── Existing helpers (unchanged) ───────────────────────────────────────
 
     private void notify(Long userId, String message) {
         notificationRepository.save(Notification.builder()
