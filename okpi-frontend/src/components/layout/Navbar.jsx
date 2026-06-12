@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Button from "../common/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { getRoleLabel, isManagerOrAdmin } from "../../utils/display";
-import { getNotifications, markNotificationRead } from "../../api/authApi"; // ✅ ADD
-
+import { getNotifications, markAllNotificationsRead } from "../../api/authApi";
 
 function getHeaderMeta(pathname) {
   if (pathname === "/") {
@@ -30,19 +29,51 @@ export default function Navbar() {
   const { user } = useAuth();
   const location = useLocation();
   const headerMeta = getHeaderMeta(location.pathname);
-
   const canCreateObjectives = isManagerOrAdmin(user?.role);
 
-  // NEW STATE
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // FETCH NOTIFICATIONS
+  // CHANGED: snapshot of notification ids that were UNREAD at the moment the
+  // dropdown was last opened. Only these render in the list — once you've
+  // opened the dropdown and they're marked read, they won't appear again on
+  // the next open (unless new unread ones arrive).
+  const [visibleIds, setVisibleIds] = useState(() => new Set());
+
   useEffect(() => {
     getNotifications()
-        .then(setNotifications)
+        .then((data) => {
+          setNotifications(data);
+          // On first load, anything still unread is eligible to be shown
+          // the first time the bell is opened.
+          setVisibleIds(new Set(data.filter((n) => !n.read).map((n) => n.id)));
+        })
         .catch(() => setNotifications([]));
   }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // CHANGED: opening the dropdown shows whatever is currently unread
+  // (snapshotted into visibleIds), then immediately marks everything read
+  // both locally and on the server. Next time you open it, those ids are no
+  // longer unread, so visibleIds (recomputed at that next open) won't
+  // include them — they've "disappeared".
+  function handleToggleDropdown() {
+    const willOpen = !showDropdown;
+
+    if (willOpen) {
+      setVisibleIds(new Set(notifications.filter((n) => !n.read).map((n) => n.id)));
+
+      if (unreadCount > 0) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        markAllNotificationsRead().catch(() => {});
+      }
+    }
+
+    setShowDropdown(willOpen);
+  }
+
+  const visibleNotifications = notifications.filter((n) => visibleIds.has(n.id));
 
   const action = (() => {
     if (location.pathname === "/") {
@@ -50,17 +81,14 @@ export default function Navbar() {
           ? { label: "New goal", to: "/objectives/new" }
           : { label: "New insight", to: "/insights/new" };
     }
-
     if (location.pathname.startsWith("/objectives")) {
       return canCreateObjectives
           ? { label: "New goal", to: "/objectives/new" }
           : null;
     }
-
     if (location.pathname.startsWith("/insights") || location.pathname.startsWith("/kpis")) {
       return { label: "New insight", to: "/insights/new" };
     }
-
     return null;
   })();
 
@@ -75,7 +103,6 @@ export default function Navbar() {
   return (
       <header className="border-b border-white/10 bg-[#1a2030]/95 text-white shadow-[0_10px_30px_rgba(15,23,42,0.18)] backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-
           {/* LEFT */}
           <Link to="/" className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white">
@@ -100,53 +127,30 @@ export default function Navbar() {
 
           {/* RIGHT */}
           <div className="flex items-center gap-3">
+            {/* NOTIFICATIONS */}
+            <div className="relative">
+              <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={handleToggleDropdown}
+                  aria-label="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full">
+                  {unreadCount}
+                </span>
+                )}
+              </Button>
 
-             {/* 🔔 NOTIFICATIONS */}
-             <div className="relative">
-               <Button
-                   variant="secondary"
-                   size="icon"
-                   onClick={() => {
-                     const isOpening = !showDropdown;
-                     setShowDropdown(isOpening);
-
-                     // If opening, optimistically mark unread notifications as read in the UI
-                     if (isOpening) {
-                       const unread = (notifications ?? []).filter((n) => !n.read);
-                       if (unread.length) {
-                         // update UI immediately
-                         setNotifications((cur) => (cur ?? []).map((n) => ({ ...n, read: true })));
-                         // mark on server (fire-and-forget)
-                         unread.forEach((n) => {
-                           markNotificationRead(n.id).catch(() => {});
-                         });
-                       }
-                     }
-                   }}
-                   aria-label="Notifications"
-               >
-                 <Bell className="h-4 w-4" />
-
-                 {/* 🔴 RED BADGE */}
-                 { (notifications ?? []).filter((n) => !n.read).length > 0 && (
-                     <span className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full">
-                   {(notifications ?? []).filter((n) => !n.read).length}
-                 </span>
-                 )}
-               </Button>
-
-              {/* DROPDOWN */}
               {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white text-black border rounded-lg shadow-lg p-3 z-50">
+                  <div className="absolute right-0 mt-2 w-80 bg-white text-black border rounded-lg shadow-lg p-3 z-50 max-h-96 overflow-y-auto">
                     <h3 className="font-semibold mb-2">Notifications</h3>
-
-                    {notifications.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          No notifications
-                        </p>
+                    {visibleNotifications.length === 0 ? (
+                        <p className="text-sm text-gray-500">No new notifications</p>
                     ) : (
-                        notifications.map((n) => (
-                            <div key={n.id} className="p-2 border-b text-sm">
+                        visibleNotifications.map((n) => (
+                            <div key={n.id} className="p-2 border-b text-sm last:border-b-0">
                               {n.message}
                             </div>
                         ))
@@ -158,9 +162,7 @@ export default function Navbar() {
             {/* ACTION BUTTON */}
             {action ? (
                 <Link to={action.to}>
-                  <Button variant="accent">
-                    {action.label}
-                  </Button>
+                  <Button variant="accent">{action.label}</Button>
                 </Link>
             ) : null}
 
@@ -171,7 +173,6 @@ export default function Navbar() {
             >
               {initials}
             </Link>
-
           </div>
         </div>
       </header>

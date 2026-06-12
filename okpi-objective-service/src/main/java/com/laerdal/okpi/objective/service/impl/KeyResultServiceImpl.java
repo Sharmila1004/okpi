@@ -27,11 +27,17 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * CHANGED:
- *  - Injected KrJiraMappingRepository and JiraIssueRepository
- *  - Added private helper resolveJiraIssues(krId) that fetches linked tickets
- *  - getByObjectiveId, create, update now attach jiraIssues to responses
- *  - Constructor updated accordingly
+ * CHANGED from previous version:
+ *  - calculateProgress(...) now uses the average Jira ticket progress for any KR
+ *    that has linked tickets in kr_jira_mapping, instead of the manual
+ *    currentValue/targetValue ratio. KRs with no linked tickets still use the
+ *    manual ratio as before.
+ *  - This makes the Objective's overall progressPercentage (shown on the
+ *    Dashboard) match what's shown on the Objective Detail page ("from Jira" %).
+ *  - getByObjectiveId now ALSO triggers recalculateObjectiveProgress so that
+ *    simply opening/viewing a goal refreshes the stored objective progress —
+ *    useful because your KR 1.4 currentValue was set directly via SQL and
+ *    never went through recalculation.
  */
 @Service
 public class KeyResultServiceImpl implements KeyResultService {
@@ -42,8 +48,6 @@ public class KeyResultServiceImpl implements KeyResultService {
     private final RequestContext requestContext;
     private final NotificationRepository notificationRepository;
     private final AuthNotificationClient authNotificationClient;
-
-    // NEW
     private final KrJiraMappingRepository krJiraMappingRepository;
     private final JiraIssueRepository jiraIssueRepository;
 
@@ -54,7 +58,6 @@ public class KeyResultServiceImpl implements KeyResultService {
             RequestContext requestContext,
             NotificationRepository notificationRepository,
             AuthNotificationClient authNotificationClient,
-            // NEW
             KrJiraMappingRepository krJiraMappingRepository,
             JiraIssueRepository jiraIssueRepository) {
         this.keyResultRepository = keyResultRepository;
@@ -63,7 +66,6 @@ public class KeyResultServiceImpl implements KeyResultService {
         this.requestContext = requestContext;
         this.notificationRepository = notificationRepository;
         this.authNotificationClient = authNotificationClient;
-        // NEW
         this.krJiraMappingRepository = krJiraMappingRepository;
         this.jiraIssueRepository = jiraIssueRepository;
     }
@@ -99,7 +101,6 @@ public class KeyResultServiceImpl implements KeyResultService {
         KeyResult saved = keyResultRepository.save(keyResult);
         recalculateObjectiveProgress(objective);
 
-        // Notify assignees
         String msg = "A new key result has been added to goal \""
                 + objective.getTitle() + "\": " + request.getTitle();
         objective.getAssignees().forEach(assignee -> {
@@ -108,18 +109,21 @@ public class KeyResultServiceImpl implements KeyResultService {
             }
         });
 
-        // CHANGED: attach jira issues (empty for a brand-new KR, but consistent)
         return keyResultMapper.toResponse(saved, resolveJiraIssues(saved.getId()));
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<KeyResultResponse> getByObjectiveId(Long objectiveId) {
         Objective objective = objectiveRepository.findByIdAndIsDeletedFalse(objectiveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Objective not found"));
         requireViewer(objective);
 
-        // CHANGED: for each KR, fetch and attach its linked Jira tickets
+        // CHANGED: refresh the stored objective progress every time the goal is
+        // viewed, so Jira-derived progress on KRs is reflected on the Dashboard
+        // without requiring an explicit "edit and save" action.
+        recalculateObjectiveProgress(objective);
+
         return keyResultRepository.findAllByObjective_Id(objectiveId).stream()
                 .map(kr -> keyResultMapper.toResponse(kr, resolveJiraIssues(kr.getId())))
                 .toList();
@@ -160,7 +164,6 @@ public class KeyResultServiceImpl implements KeyResultService {
         KeyResult saved = keyResultRepository.save(keyResult);
         recalculateObjectiveProgress(saved.getObjective());
 
-        // CHANGED: attach jira issues
         return keyResultMapper.toResponse(saved, resolveJiraIssues(saved.getId()));
     }
 
@@ -172,16 +175,11 @@ public class KeyResultServiceImpl implements KeyResultService {
         requireOwnerOrAdmin(keyResult.getObjective());
         Objective objective = keyResult.getObjective();
         keyResultRepository.delete(keyResult);
-        // kr_jira_mapping rows are cascade-deleted by the FK constraint
         recalculateObjectiveProgress(objective);
     }
 
-    // ── NEW: Jira helper ───────────────────────────────────────────────────
+    // ── Jira helper ────────────────────────────────────────────────────────
 
-    /**
-     * Fetch all Jira issues linked to a key result by its id.
-     * Returns an empty list if there are no mappings — never null.
-     */
     private List<JiraIssueDto> resolveJiraIssues(Long krId) {
         List<String> issueKeys = krJiraMappingRepository.findAllByKrId(krId)
                 .stream()
@@ -203,7 +201,22 @@ public class KeyResultServiceImpl implements KeyResultService {
                 .toList();
     }
 
-    // ── Existing helpers (unchanged) ───────────────────────────────────────
+    /**
+     * NEW: returns the average Jira progress (0-100) for a KR, or null if it
+     * has no linked tickets / no tickets with a progress value.
+     */
+    private Integer resolveJiraProgressPercent(Long krId) {
+        List<JiraIssueDto> issues = resolveJiraIssues(krId);
+        long count = issues.stream().filter(i -> i.getProgressPercent() != null).count();
+        if (count == 0) return null;
+        int sum = issues.stream()
+                .filter(i -> i.getProgressPercent() != null)
+                .mapToInt(JiraIssueDto::getProgressPercent)
+                .sum();
+        return (int) Math.round((double) sum / count);
+    }
+
+    // ── Existing helpers ──────────────────────────────────────────────────
 
     private void notify(Long userId, String message) {
         notificationRepository.save(Notification.builder()
@@ -249,30 +262,90 @@ public class KeyResultServiceImpl implements KeyResultService {
                 .anyMatch(a -> userId.equals(a.getUserId()));
     }
 
+    /**
+     * CHANGED: now also auto-derives objective.status from the recalculated
+     * progress percentage (same thresholds used for KR computedStatus):
+     *   100%   -> COMPLETED
+     *   >= 70% -> ON_TRACK
+     *   >= 30% -> AT_RISK
+     *   <  30% -> OFF_TRACK
+     *   0% and currently DRAFT -> stays DRAFT (goal not started yet)
+     *
+     * This means a goal that was sitting in "Draft" with manually-set KR
+     * progress (e.g. via Jira tickets) will automatically move to
+     * ON_TRACK / AT_RISK / etc. the next time its key results are viewed or
+     * modified — no manual "publish" step required.
+     */
     private void recalculateObjectiveProgress(Objective objective) {
         List<KeyResult> keyResults =
                 keyResultRepository.findAllByObjective_Id(objective.getId());
-        objective.setProgressPercentage(calculateProgress(keyResults));
+        BigDecimal progress = calculateProgress(keyResults);
+        objective.setProgressPercentage(progress);
+        objective.setStatus(deriveObjectiveStatus(progress, objective.getStatus()));
         objectiveRepository.save(objective);
     }
 
+    /** NEW: maps a 0-100 progress percentage to an ObjectiveStatus. */
+    private com.laerdal.okpi.objective.enums.ObjectiveStatus deriveObjectiveStatus(
+            BigDecimal progress,
+            com.laerdal.okpi.objective.enums.ObjectiveStatus currentStatus) {
+
+        if (progress == null) {
+            return currentStatus;
+        }
+
+        int percent = progress.intValue();
+
+        if (percent == 0) {
+            // No progress yet — leave DRAFT goals as DRAFT, but don't force
+            // an already-active goal back into DRAFT.
+            return currentStatus == com.laerdal.okpi.objective.enums.ObjectiveStatus.DRAFT
+                    ? com.laerdal.okpi.objective.enums.ObjectiveStatus.DRAFT
+                    : com.laerdal.okpi.objective.enums.ObjectiveStatus.OFF_TRACK;
+        }
+        if (percent == 100) {
+            return com.laerdal.okpi.objective.enums.ObjectiveStatus.COMPLETED;
+        }
+        if (percent >= 70) {
+            return com.laerdal.okpi.objective.enums.ObjectiveStatus.ON_TRACK;
+        }
+        if (percent >= 30) {
+            return com.laerdal.okpi.objective.enums.ObjectiveStatus.AT_RISK;
+        }
+        return com.laerdal.okpi.objective.enums.ObjectiveStatus.OFF_TRACK;
+    }
+
+    /**
+     * CHANGED: For each KR, if it has linked Jira tickets, use the average
+     * Jira progress (0-100) as its ratio. Otherwise fall back to the manual
+     * currentValue/targetValue ratio, exactly as before.
+     */
     private BigDecimal calculateProgress(List<KeyResult> keyResults) {
         if (keyResults.isEmpty()) return BigDecimal.ZERO;
         BigDecimal sum = BigDecimal.ZERO;
         for (KeyResult kr : keyResults) {
-            BigDecimal start = kr.getStartValue() == null ? BigDecimal.ZERO : kr.getStartValue();
-            BigDecimal current = kr.getCurrentValue() == null
-                    ? BigDecimal.ZERO : kr.getCurrentValue();
-            BigDecimal target = kr.getTargetValue() == null
-                    ? BigDecimal.ZERO : kr.getTargetValue();
-            BigDecimal denom = target.subtract(start);
             BigDecimal ratio;
-            if (denom.compareTo(BigDecimal.ZERO) == 0) {
-                ratio = current.compareTo(target) >= 0 ? BigDecimal.ONE : BigDecimal.ZERO;
+
+            Integer jiraPercent = resolveJiraProgressPercent(kr.getId());
+            if (jiraPercent != null) {
+                // Use Jira-derived progress (0-100 -> 0-1)
+                ratio = BigDecimal.valueOf(jiraPercent)
+                        .divide(BigDecimal.valueOf(100), 6, java.math.RoundingMode.HALF_UP);
             } else {
-                ratio = current.subtract(start)
-                        .divide(denom, 6, java.math.RoundingMode.HALF_UP);
+                BigDecimal start = kr.getStartValue() == null ? BigDecimal.ZERO : kr.getStartValue();
+                BigDecimal current = kr.getCurrentValue() == null
+                        ? BigDecimal.ZERO : kr.getCurrentValue();
+                BigDecimal target = kr.getTargetValue() == null
+                        ? BigDecimal.ZERO : kr.getTargetValue();
+                BigDecimal denom = target.subtract(start);
+                if (denom.compareTo(BigDecimal.ZERO) == 0) {
+                    ratio = current.compareTo(target) >= 0 ? BigDecimal.ONE : BigDecimal.ZERO;
+                } else {
+                    ratio = current.subtract(start)
+                            .divide(denom, 6, java.math.RoundingMode.HALF_UP);
+                }
             }
+
             ratio = ratio.max(BigDecimal.ZERO).min(BigDecimal.ONE);
             sum = sum.add(ratio);
         }

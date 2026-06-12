@@ -107,3 +107,7 @@ export async function markNotificationRead(notificationId) {
   const response = await axiosInstance.post(`/api/v1/notifications/${notificationId}/read`);
   return response.data;
 }
+export async function markAllNotificationsRead() {
+  const response = await axiosInstance.post("/api/v1/notifications/read-all");
+  return response.data;
+}
